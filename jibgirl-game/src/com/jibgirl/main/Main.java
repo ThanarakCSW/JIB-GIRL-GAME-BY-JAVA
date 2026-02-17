@@ -2,54 +2,77 @@ package com.jibgirl.main;
 
 import com.jibgirl.model.*;
 import com.jibgirl.controller.ChoiceManager;
-import java.util.Scanner; // ตัวช่วยรับค่าจากคีย์บอร์ด
+import com.jibgirl.view.ConsoleMoneyUI;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        // --- 1. SETUP ข้อมูล (เหมือนเดิม) ---
+        // --- 1. SETUP: เตรียมตัวละครและระบบ ---
         Scanner scanner = new Scanner(System.in);
-        Player hero = new Player("Pokpong", 1000);
+        Player player = new Player("Pokpong", 1000); // เริ่มต้นมีเงิน 1,000 บาท
         ChoiceManager manager = new ChoiceManager();
+        ConsoleMoneyUI ui = new ConsoleMoneyUI();
 
-        // สร้างคำถามจำลอง
-        Dialogue scene = new Dialogue("นางเอกมองหน้าคุณแล้วถามว่า 'เย็นนี้ว่างไหม?'");
-        scene.addChoice(new Choice("ว่างสิ ไปกินข้าวกัน", 10, 500, "เย้! งั้นเจอกันร้านเดิมนะ"));
-        scene.addChoice(new Choice("ไม่ว่าง ต้องปั่นโค้ด", -5, 0, "อ๋อ... งั้นไม่กวนนะ (เธอทำหน้าเศร้า)"));
+        // --- 2. CONTENT: สร้างสถานการณ์จำลอง ---
+        Dialogue scene = new Dialogue("วันนี้วันเกิดนางเอก! คุณจะซื้ออะไรให้เธอ?");
 
-        // --- 2. GAME LOOP (จำลอง GUI) ---
-        while (true) {
-            System.out.println("\n=================================");
-            System.out.println("สถานะ: เงิน " + hero.getMoney() + " | ความรัก " + hero.getAffection());
-            System.out.println("เหตุการณ์: " + scene.getQuestion());
-            System.out.println("เลือกคำตอบ (กดเลข):");
+        // ทางเลือกที่ 1: ของแพง (ได้ใจเยอะ)
+        scene.addChoice(new Choice("ซื้อกระเป๋าแบรนด์เนม", 50, 2000, "กรี๊ดดด! รักที่ซู๊ดดด (แต่ตังค์คุณหมดนะ)"));
 
-            // วนลูปแสดง Choice ออกมา
-            for (int i = 0; i < scene.getChoices().size(); i++) {
-                System.out.println("[" + (i + 1) + "] " + scene.getChoices().get(i).getText());
+        // ทางเลือกที่ 2: ของราคาพอดีๆ
+        scene.addChoice(new Choice("พาไปกินหมูกระทะ", 10, 500, "อร่อยจัง! ขอบคุณนะที่พามาเลี้ยง"));
+
+        // ทางเลือกที่ 3: ไม่เสียตังค์ (แต่เสียใจ)
+        scene.addChoice(new Choice("เดินเล่นในสวนสาธารณะ", -5, 0, "บรรยากาศดีนะ... แต่หิวข้าวอะ (เธอมองแรง)"));
+
+        // --- 3. GAME LOOP: วนลูปเล่นไปเรื่อยๆ ---
+        boolean isRunning = true;
+        while (isRunning) {
+            // แสดงสถานะการเงินปัจจุบัน
+            ui.updateMoneyDisplay(player);
+            System.out.println("❤️ ค่าความรักปัจจุบัน: " + player.getAffection());
+            System.out.println("------------------------------------------------");
+
+            // แสดงคำถาม
+            System.out.println("สถานการณ์: " + scene.getQuestion());
+
+            // แสดงตัวเลือก
+            int i = 1;
+            for (Choice c : scene.getChoices()) {
+                System.out.println("[" + i + "] " + c.getText() + " (ราคา: " + c.getCost() + " บาท)");
+                i++;
             }
             System.out.println("[0] ออกจากเกม");
+            System.out.print(">> เลือกข้อไหนดีครับ? : ");
 
-            // --- 3. INPUT (แทนการกดปุ่ม) ---
-            System.out.print(">> ");
+            // รับค่าจากคีย์บอร์ด
             int input = scanner.nextInt();
 
-            if (input == 0)
-                break; // ออกจากลูป
+            if (input == 0) {
+                isRunning = false; // จบเกม
+            } else if (input > 0 && input <= scene.getChoices().size()) {
 
-            // ตรวจสอบว่ากดเลขถูกไหม
-            if (input > 0 && input <= scene.getChoices().size()) {
-                // ดึง Choice ที่เลือกออกมา
-                Choice selected = scene.getChoices().get(input - 1);
+                // ดึงตัวเลือกที่ user กด
+                Choice selectedChoice = scene.getChoices().get(input - 1);
 
-                // *** ตรงนี้คือหัวใจสำคัญ ***
-                // เราเรียกใช้ Logic เดิมที่เขียนไว้ ไม่ว่าจะเป็น Console หรือ GUI
-                // ก็เรียกบรรทัดนี้เหมือนกัน!
-                manager.selectChoice(hero, selected);
+                // *** จุดสำคัญที่สุด! *** // ส่งให้ ChoiceManager จัดการหักเงินและเพิ่มความรัก
+                manager.selectChoice(player, selectedChoice);
+
+                // (Optional) แอบเติมเงินให้ตัวเองหน่อย เผื่อเงินหมดแล้วอยากเทสต่อ
+                // player.earnMoney(2000);
 
             } else {
-                System.out.println("เลือกผิดข้อครับ!");
+                System.out.println("❌ กดผิดครับ! เลือกใหม่นะ");
             }
+
+            System.out.println("\nกด Enter เพื่อไปต่อ...");
+            try {
+                System.in.read();
+            } catch (Exception e) {
+            } // หยุดรอให้กด Enter
         }
+
+        System.out.println("จบเกมครับ! เจอกันใหม่ Sprint หน้า");
         scanner.close();
     }
 }
