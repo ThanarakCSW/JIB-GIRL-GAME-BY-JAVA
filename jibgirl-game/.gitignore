@@ -1,0 +1,15 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files
+*.jar
+*.war
+
+# IDE Config (ถ้าใช้ IntelliJ หรือ VS Code)
+.idea/
+*.iml
+.vscode/
+.DS_Store
