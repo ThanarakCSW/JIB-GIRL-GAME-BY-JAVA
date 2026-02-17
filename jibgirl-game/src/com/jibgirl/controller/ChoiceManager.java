@@ -5,25 +5,27 @@ import com.jibgirl.model.Player;
 
 public class ChoiceManager {
 
-    // Method นี้คือ "สมอง" ของระบบเลือกตอบ
     public void selectChoice(Player player, Choice choice) {
         System.out.println(">> ผู้เล่นเลือก: " + choice.getText());
 
-        // 1. ตรวจสอบเงื่อนไข (Validation)
-        if (player.getMoney() < choice.getCost()) {
-            System.out.println("Msg: เงินไม่พอครับ! (ต้องการ " + choice.getCost() + " บาท)");
-            return; // จบการทำงาน ไม่หักเงิน ไม่เพิ่มความรัก
+        // --- แก้ไขตรงนี้ครับ (ใช้ spendMoney แบบใหม่) ---
+        
+        // เราใช้ if เพื่อถาม Player ว่า "มีเงินจ่ายไหม?"
+        // ถ้าจ่ายได้ (True) -> จะหักเงินให้เลย แล้วทำข้างในปีกกา
+        if (player.spendMoney(choice.getCost())) {
+            
+            // 1. จ่ายเงินสำเร็จ -> เพิ่มความรัก
+            player.addAffection(choice.getAffectionImpact());
+            
+            // 2. แสดงผลลัพธ์
+            System.out.println("Result: " + choice.getReaction());
+            
+        } else {
+            // จ่ายเงินไม่สำเร็จ (False) -> เงินไม่พอ
+            System.out.println("❌ เงินไม่พอครับ! (ขาดอีก " + (choice.getCost() - player.getMoney()) + " บาท)");
+            System.out.println("Result: คุณไม่ได้ทำอะไรเลย เพราะไม่มีตังค์...");
         }
-
-        // 2. คำนวณผลลัพธ์ (Execution)
-        if (choice.getCost() > 0) {
-            player.decreaseMoney(choice.getCost());
-        }
-
-        player.addAffection(choice.getAffectionImpact());
-
-        // 3. แสดง Reaction (Feedback)
-        System.out.println("Girl says: " + choice.getReaction());
+        
         System.out.println("------------------------------------------------");
     }
 }

@@ -22,6 +22,24 @@ public class Player {
         System.out.println("DEBUG: จ่ายเงินไป " + amount + " (เหลือ: " + this.money + ")");
     }
 
-    public int getMoney() { return money; }
-    public int getAffection() { return affection; }
+    public boolean spendMoney(int amount) {
+        if (this.money >= amount) {
+            decreaseMoney(amount);
+            return true;
+        }
+        return false;
+    }
+
+    public int getMoney() {
+        return money;
+    }
+
+    // เพิ่มเมธอดนี้เพื่อให้ ConsoleMoneyUI เรียกชื่อได้
+    public String getName() {
+        return name;
+    }
+
+    public int getAffection() {
+        return affection;
+    }
 }
