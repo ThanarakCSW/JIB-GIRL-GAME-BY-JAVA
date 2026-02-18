@@ -22,9 +22,14 @@ public class GameGui extends JFrame {
     public GameGui() {
 
         // ======================
+        // ตั้งค่า Background
+        // ======================
+        setContentPane(new BackgroundPanel("/com/jibgirl/asset/bg.jpg"));
+
+        // ======================
         // สร้าง Model
         // ======================
-        player = new Player("Pokpong", 1000);
+        player = new Player("Brian", 1000);
         scene = new Dialogue("วันนี้วันเกิดนางเอก! คุณจะซื้ออะไรให้เธอ?");
         manager = new ChoiceManager();
 
@@ -32,22 +37,19 @@ public class GameGui extends JFrame {
                 "ซื้อกระเป๋าแบรนด์เนม",
                 50,
                 2000,
-                "กรี๊ดดด! รักที่สุดเลย! 💕"
-        ));
+                "กรี๊ดดด! รักที่สุดเลย! 💕"));
 
         scene.addChoice(new Choice(
                 "พาไปกินหมูกระทะ",
                 10,
                 500,
-                "อร่อยจัง! 😋"
-        ));
+                "อร่อยจัง! 😋"));
 
         scene.addChoice(new Choice(
                 "เดินเล่นในสวน",
                 -5,
                 0,
-                "บรรยากาศดีนะ... 😒"
-        ));
+                "บรรยากาศดีนะ... 😒"));
 
         // ======================
         // ตั้งค่าหน้าต่าง
@@ -62,6 +64,7 @@ public class GameGui extends JFrame {
         // TOP PANEL
         // ======================
         JPanel topPanel = new JPanel(new GridLayout(2, 1));
+        topPanel.setOpaque(true);
 
         moneyLabel = new JLabel("💰 เงิน: " + player.getMoney() + " บาท");
         moneyLabel.setFont(new Font("Tahoma", Font.BOLD, 18));
@@ -85,16 +88,26 @@ public class GameGui extends JFrame {
         dialogueArea.setEditable(false);
 
         JScrollPane scrollPane = new JScrollPane(dialogueArea);
-        add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setPreferredSize(new Dimension(800, 150)); // ความสูง 150, ความกว้างจะยืดตามจอ
+
+        // ======================
+        // BOTTOM CONTAINER (Text + Buttons)
+        // ======================
+        JPanel bottomContainer = new JPanel(new BorderLayout());
+        bottomContainer.setOpaque(false);
+        bottomContainer.add(scrollPane, BorderLayout.NORTH);
 
         // ======================
         // BOTTOM (Choices)
         // ======================
         buttonPanel = new JPanel(new GridLayout(0, 1));
+        buttonPanel.setOpaque(false);
 
         loadChoices();
 
-        add(buttonPanel, BorderLayout.SOUTH);
+        bottomContainer.add(buttonPanel, BorderLayout.SOUTH);
+
+        add(bottomContainer, BorderLayout.SOUTH);
 
         setVisible(true);
     }
@@ -106,8 +119,7 @@ public class GameGui extends JFrame {
         for (Choice c : scene.getChoices()) {
 
             JButton btn = new JButton(
-                    c.getText() + " (ราคา " + c.getCost() + " บาท)"
-            );
+                    c.getText() + " (ราคา " + c.getCost() + " บาท)");
 
             btn.addActionListener(e -> {
 
@@ -124,5 +136,31 @@ public class GameGui extends JFrame {
 
         buttonPanel.revalidate();
         buttonPanel.repaint();
+    }
+
+    // คลาสสำหรับพื้นหลัง
+    private class BackgroundPanel extends JPanel {
+        private Image backgroundImage;
+
+        public BackgroundPanel(String fileName) {
+            try {
+                java.net.URL imgURL = getClass().getResource(fileName);
+                if (imgURL != null) {
+                    backgroundImage = new ImageIcon(imgURL).getImage();
+                } else {
+                    System.err.println("File not found: " + fileName);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (backgroundImage != null) {
+                g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+            }
+        }
     }
 }
