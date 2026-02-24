@@ -1,6 +1,10 @@
 package com.jibgirl.main.Shop;
 
 import com.jibgirl.main.Inventrory.Inventory;
+import com.jibgirl.model.Player;
+import com.jibgirl.utils.UIUtils.*;
+import com.jibgirl.utils.UIUtils;
+import com.jibgirl.view.GameGui;
 
 import java.awt.*;
 import javax.swing.*;
@@ -8,162 +12,133 @@ import javax.swing.border.EmptyBorder;
 
 public class ShopUI extends JFrame {
 
-    private Inventory inventory = new Inventory();
+    private Inventory inventory;
+    private Player player;
+    private GameGui parentGui;
 
-    public ShopUI() {
+    public ShopUI(Player player, Inventory inventory, GameGui parentGui) {
+        this.player = player;
+        this.inventory = inventory;
+        this.parentGui = parentGui;
 
-        setTitle("💖 My Dating Sim - ร้านค้า");
-        setSize(650, 520);
+        setTitle("🎀 Kawaii Shop - ร้านค้าน่ารัก 🎀");
+        setSize(750, 650);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        getContentPane().setBackground(new Color(255, 240, 245));
+        // Pastel Background
+        getContentPane().setBackground(UIUtils.PASTEL_PINK);
 
-        // ===== หมวดสินค้า =====
-        JPanel categoryPanel = new JPanel(new GridLayout(3, 2, 15, 15));
-        categoryPanel.setBorder(new EmptyBorder(20, 40, 20, 40));
-        categoryPanel.setBackground(new Color(255, 240, 245));
+        JLabel titleLabel = new JLabel("Welcome to My Cute Shop ✨", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Tahoma", Font.BOLD, 28));
+        titleLabel.setForeground(new Color(150, 50, 100));
+        titleLabel.setBorder(new EmptyBorder(30, 0, 10, 0));
+        add(titleLabel, BorderLayout.NORTH);
 
-        categoryPanel.add(createCategoryButton("เครื่องเขียน"));
-        categoryPanel.add(createCategoryButton("เครื่องดื่ม"));
-        categoryPanel.add(createCategoryButton("ดอกไม้"));
-        categoryPanel.add(createCategoryButton("อุปกรณ์กีฬา"));
-        categoryPanel.add(createCategoryButton("อุปกรณ์ท่องเที่ยว"));
+        // Subtitle or Shop Balance
+        JLabel balanceLabel = new JLabel("Your Balance: " + player.getMoney() + "฿", SwingConstants.CENTER);
+        balanceLabel.setFont(new Font("Tahoma", Font.BOLD, 18));
+        balanceLabel.setForeground(new Color(100, 50, 50));
+        add(balanceLabel, BorderLayout.NORTH);
 
-        add(categoryPanel, BorderLayout.CENTER);
+        // Re-adjusting layout to fit both title and balance
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        headerPanel.setOpaque(false);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        balanceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        headerPanel.add(titleLabel);
+        headerPanel.add(balanceLabel);
+        add(headerPanel, BorderLayout.NORTH);
 
-        // ===== ปุ่มดู Inventory =====
-        JButton viewInventory = new JButton("ดู Inventory 📦");
-        viewInventory.setBackground(new Color(255, 105, 180));
-        viewInventory.setForeground(Color.WHITE);
-        viewInventory.setFocusPainted(false);
-        viewInventory.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        // Shop Content
+        JPanel mainPanel = new JPanel(new GridLayout(0, 3, 20, 20));
+        mainPanel.setOpaque(false);
+        mainPanel.setBorder(new EmptyBorder(20, 40, 40, 40));
 
-        viewInventory.addActionListener(e ->
-                JOptionPane.showMessageDialog(this, inventory.showItems())
-        );
+        // Adding Items
+        mainPanel.add(createShopCard("ชุดพู่กัน", "🖌️", 150, balanceLabel));
+        mainPanel.add(createShopCard("สมุดสเก็ตช์", "📒", 80, balanceLabel));
+        mainPanel.add(createShopCard("สีน้ำพรีเมียม", "🎨", 250, balanceLabel));
+        mainPanel.add(createShopCard("โกโก้ร้อน", "☕", 45, balanceLabel));
+        mainPanel.add(createShopCard("ชานมไข่มุก", "🧋", 60, balanceLabel));
+        mainPanel.add(createShopCard("ดอกทานตะวัน", "🌻", 120, balanceLabel));
+        mainPanel.add(createShopCard("ดอยทิวลิป", "🌷", 150, balanceLabel));
+        mainPanel.add(createShopCard("รองเท้าบาส", "👟", 500, balanceLabel));
+        mainPanel.add(createShopCard("กล้องโพลาฯ", "📸", 800, balanceLabel));
 
-        JPanel bottomPanel = new JPanel();
-        bottomPanel.setBackground(new Color(255, 240, 245));
-        bottomPanel.add(viewInventory);
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setBorder(null);
+        add(scrollPane, BorderLayout.CENTER);
 
-        add(bottomPanel, BorderLayout.SOUTH);
+        // Footer
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(20, 0, 30, 0));
+
+        PremiumButton closeBtn = new PremiumButton("ปิดร้านค้า ❌");
+        closeBtn.setCute(true);
+        closeBtn.setPreferredSize(new Dimension(150, 50));
+        closeBtn.addActionListener(e -> dispose());
+        footer.add(closeBtn);
+
+        add(footer, BorderLayout.SOUTH);
 
         setVisible(true);
     }
 
-    private JButton createCategoryButton(String title) {
+    private JPanel createShopCard(String name, String icon, int price, JLabel balanceLabel) {
+        CuteCard card = new CuteCard(Color.WHITE);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(new EmptyBorder(15, 10, 15, 10));
 
-        JButton button = new JButton(title);
-        button.setFocusPainted(false);
-        button.setFont(new Font("Tahoma", Font.BOLD, 16));
-        button.setBackground(new Color(255, 182, 193));
-        button.setForeground(Color.WHITE);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JLabel iconLabel = new JLabel(icon, SwingConstants.CENTER);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 50));
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        button.addActionListener(e -> openItems(title));
+        JLabel nameLabel = new JLabel(name, SwingConstants.CENTER);
+        nameLabel.setFont(new Font("Tahoma", Font.BOLD, 16));
+        nameLabel.setForeground(new Color(100, 50, 100));
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        return button;
-    }
+        JLabel priceLabel = new JLabel("Price: " + price + "฿", SwingConstants.CENTER);
+        priceLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+        priceLabel.setForeground(new Color(255, 100, 150));
+        priceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-    private void openItems(String category) {
-
-        JDialog dialog = new JDialog(this, category, true);
-        dialog.setSize(500, 550);
-        dialog.setLayout(new BorderLayout());
-        dialog.getContentPane().setBackground(new Color(255, 240, 245));
-
-        JLabel titleLabel = new JLabel("หมวด : " + category, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Tahoma", Font.BOLD, 20));
-        titleLabel.setForeground(new Color(199, 21, 133));
-        titleLabel.setBorder(new EmptyBorder(20, 10, 10, 10));
-
-        dialog.add(titleLabel, BorderLayout.NORTH);
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(new Color(255, 240, 245));
-        panel.setBorder(new EmptyBorder(10, 30, 10, 30));
-
-        if (category.equals("เครื่องเขียน")) {
-            panel.add(createItem("ชุดพู่กันหัวละเอียด"));
-            panel.add(createItem("สมุดสเก็ตช์ปกผ้า"));
-            panel.add(createItem("สีน้ำเกรดศิลปิน"));
-        }
-
-        if (category.equals("เครื่องดื่ม")) {
-            panel.add(createItem("โกโก้ร้อน"));
-            panel.add(createItem("ชาเอิร์ลเกรย์"));
-            panel.add(createItem("เกลือแร่เย็น ๆ"));
-            panel.add(createItem("อเมริกาโน่เย็น"));
-            panel.add(createItem("ชานมไข่มุก"));
-            panel.add(createItem("น้ำผลไม้ปั่นสด"));
-        }
-
-        if (category.equals("ดอกไม้")) {
-            panel.add(createItem("ดอกยิปโซ"));
-            panel.add(createItem("ดอกทานตะวัน"));
-            panel.add(createItem("ดอกทิวลิปสีชมพู"));
-        }
-
-        if (category.equals("อุปกรณ์กีฬา")) {
-            panel.add(createItem("รองเท้าบาสรุ่นลิมิเต็ด"));
-            panel.add(createItem("สนับเข่าแบบรัดกระชับ"));
-            panel.add(createItem("ลูกบาสสำหรับแข่ง"));
-        }
-
-        if (category.equals("อุปกรณ์ท่องเที่ยว")) {
-            panel.add(createItem("กล้องโพลารอยด์"));
-            panel.add(createItem("สมุดบันทึกท่องเที่ยว"));
-            panel.add(createItem("กระเป๋าผ้าแนวมินิมอล"));
-        }
-
-        JScrollPane scrollPane = new JScrollPane(panel);
-        scrollPane.setBorder(null);
-        dialog.add(scrollPane, BorderLayout.CENTER);
-
-        JButton close = new JButton("ปิดร้าน");
-        close.addActionListener(e -> dialog.dispose());
-
-        JPanel bottom = new JPanel();
-        bottom.setBackground(new Color(255, 240, 245));
-        bottom.add(close);
-
-        dialog.add(bottom, BorderLayout.SOUTH);
-
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
-    }
-
-    private JPanel createItem(String name) {
-
-        JPanel itemPanel = new JPanel(new BorderLayout());
-        itemPanel.setMaximumSize(new Dimension(400, 60));
-        itemPanel.setBackground(Color.WHITE);
-        itemPanel.setBorder(BorderFactory.createLineBorder(new Color(255, 182, 193), 2));
-
-        JLabel label = new JLabel("  " + name);
-        label.setFont(new Font("Tahoma", Font.BOLD, 14));
-
-        JButton buyButton = new JButton("ซื้อ");
-        buyButton.setBackground(new Color(255, 182, 193));
-        buyButton.setForeground(Color.WHITE);
-        buyButton.setFocusPainted(false);
-
-        buyButton.addActionListener(e -> {
-            inventory.addItem(name);
-            JOptionPane.showMessageDialog(this,
-                    name + " ถูกเพิ่มเข้า Inventory แล้ว 🛍️");
+        PremiumButton buyBtn = new PremiumButton("BUY 🛒");
+        buyBtn.setCute(true);
+        buyBtn.setPreferredSize(new Dimension(100, 40));
+        buyBtn.setMaximumSize(new Dimension(100, 40));
+        buyBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        buyBtn.addActionListener(e -> {
+            if (player.getMoney() >= price) {
+                player.spendMoney(price);
+                inventory.addItem(name);
+                balanceLabel.setText("Your Balance: " + player.getMoney() + "฿");
+                if (parentGui != null)
+                    parentGui.refreshStatus();
+                JOptionPane.showMessageDialog(this, "ซื่อ " + name + " สำเร็จแล้วนะ! 🛍️✨", "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "เงินไม่พอจ้า! ขาดอีก " + (price - player.getMoney()) + " บาท 🥺",
+                        "Oops!", JOptionPane.WARNING_MESSAGE);
+            }
         });
 
-        itemPanel.add(label, BorderLayout.WEST);
-        itemPanel.add(buyButton, BorderLayout.EAST);
+        card.add(Box.createVerticalGlue());
+        card.add(iconLabel);
+        card.add(Box.createVerticalStrut(5));
+        card.add(nameLabel);
+        card.add(Box.createVerticalStrut(5));
+        card.add(priceLabel);
+        card.add(Box.createVerticalStrut(10));
+        card.add(buyBtn);
+        card.add(Box.createVerticalGlue());
 
-        return itemPanel;
-    }
-
-    public static void main(String[] args) {
-        new ShopUI();
+        return card;
     }
 }

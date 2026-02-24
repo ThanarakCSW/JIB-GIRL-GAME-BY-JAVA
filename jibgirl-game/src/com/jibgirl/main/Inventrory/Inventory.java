@@ -15,6 +15,14 @@ public class Inventory {
         items.add(itemName);
     }
 
+    public ArrayList<String> getItems() {
+        return items;
+    }
+
+    public void removeItem(String itemName) {
+        items.remove(itemName);
+    }
+
     // แสดงรายการของทั้งหมด
     public String showItems() {
 
@@ -27,8 +35,8 @@ public class Inventory {
 
         for (int i = 0; i < items.size(); i++) {
             sb.append((i + 1)).append(". ")
-              .append(items.get(i))
-              .append("\n");
+                    .append(items.get(i))
+                    .append("\n");
         }
 
         return sb.toString();
