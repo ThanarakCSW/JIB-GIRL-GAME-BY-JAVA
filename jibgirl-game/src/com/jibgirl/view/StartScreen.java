@@ -3,7 +3,6 @@ package com.jibgirl.view;
 import javax.swing.*;
 import java.awt.*;
 import com.jibgirl.utils.UIUtils.*;
-import com.jibgirl.utils.UIUtils;
 
 public class StartScreen extends JFrame {
 
