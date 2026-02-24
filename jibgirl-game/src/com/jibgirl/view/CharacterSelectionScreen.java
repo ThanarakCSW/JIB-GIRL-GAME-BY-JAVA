@@ -29,7 +29,7 @@ public class CharacterSelectionScreen extends JFrame {
         selectionPanel.setBorder(new EmptyBorder(0, 50, 80, 50));
 
         selectionPanel.add(createCharacterCard("มะปราง (Maprang) 🖌️", "Maprang"));
-        selectionPanel.add(createCharacterCard("อลิซ (Alice) 🎀", "Alice"));
+        selectionPanel.add(createCharacterCard("ขนม (Kanom) 📸", "Kanom"));
         selectionPanel.add(createCharacterCard("ไอซ์ (Ice) 🏀", "Ice"));
 
         add(selectionPanel, BorderLayout.CENTER);
