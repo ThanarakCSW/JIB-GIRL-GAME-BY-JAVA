@@ -183,6 +183,8 @@ public class GameGui extends JFrame {
         buttonPanel.removeAll();
         if (characterKey.equalsIgnoreCase("Maprang")) {
             loadMaprangRoute();
+        } else if (characterKey.equalsIgnoreCase("Ice")) {
+            loadIceRoute();
         } else {
             dialogueArea.setText("เนื้อเรื่องของ " + characterKey + " ยังไม่พร้อมใช้งานนะจ๊ะ ✨");
         }
@@ -206,6 +208,28 @@ public class GameGui extends JFrame {
                 break;
             case 5:
                 runDay5();
+                break;
+            default:
+                showEnding();
+        }
+    }
+
+    private void loadIceRoute() {
+        switch (day) {
+            case 1:
+                runIceDay1();
+                break;
+            case 2:
+                runIceDay2();
+                break;
+            case 3:
+                runIceDay3();
+                break;
+            case 4:
+                runIceDay4();
+                break;
+            case 5:
+                runIceDay5();
                 break;
             default:
                 showEnding();
@@ -314,12 +338,22 @@ public class GameGui extends JFrame {
     private void showEnding() {
         int score = player.getAffection();
         String endingText;
-        if (score >= 80)
-            endingText = "🎉 HAPPY ENDING: เธอรับรักคุณแล้วนะ! 💍💖";
-        else if (score >= 50)
-            endingText = "✨ NORMAL ENDING: เราเป็นเพื่อนที่ดีต่อกัน 👫🌸";
-        else
-            endingText = "💔 BAD ENDING: ขอบคุณสำหรับทุกอย่างนะ... 👋";
+
+        if (characterKey.equalsIgnoreCase("Maprang")) {
+            if (score >= 40)
+                endingText = "🎉 HAPPY ENDING: \"งั้นอยู่ดูพระอาทิตย์ตกกับฉันไปเรื่อย ๆ นะคะ\" 🌅💖";
+            else if (score > -20)
+                endingText = "✨ NORMAL ENDING: \"คุณคือเพื่อนที่อบอุ่นที่สุดของฉัน\" 👫🌸";
+            else
+                endingText = "💔 BAD ENDING: \"เราคงเข้ากันไม่ได้ค่ะ\" 👋";
+        } else if (characterKey.equalsIgnoreCase("Ice")) {
+            if (score >= 40)
+                endingText = "🏆 HAPPY ENDING: \"งั้นฉันยอมแพ้ให้นายครั้งหนึ่ง... เป็นคู่แข่งที่ดีที่สุดก็พอ\" 🏀💖";
+            else
+                endingText = "🏟️ NORMAL ENDING: \"นายนี่มัน... ยังไม่พร้อมจะเดินข้างฉันหรอกนะ\" 👋";
+        } else {
+            endingText = "✨ จบการเดินทาง... คะแนนของคุณคือ: " + score;
+        }
 
         dialogueArea.setText(endingText);
         PremiumButton exitBtn = new PremiumButton("BACK TO MAIN MENU 🏠✨");
@@ -354,6 +388,122 @@ public class GameGui extends JFrame {
         });
         buttonPanel.add(btn);
         buttonPanel.add(Box.createVerticalStrut(10));
+    }
+
+    // ======================
+    // ICE ROUTE DAYS
+    // ======================
+
+    private void runIceDay1() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 1: สนามบาส --- 🏀\nไอซ์: \"จะจีบก็ต้องชนะฉันก่อน\"");
+            addChoice("งั้นเริ่มเลย ✨", 10, 0, "ICE_D1_A");
+            addChoice("ไม่แข่งได้ไหม 🥤", 0, 0, "ICE_D1_B");
+            addChoice("ก็แค่บาสเอง 🏀", -5, 0, "ICE_D1_C");
+        } else if (gameState.equals("ICE_D1_A")) {
+            currentScene = new Dialogue("แข่งกันจริงจัง เหงื่อซึม... ไอซ์: \"ไม่หนีนี่นา\"");
+            addChoice("ฉันไม่หนีอะไรที่สำคัญ ✨", 10, 0, "NEXT_DAY");
+            addChoice("ก็แค่สนุกดี 🏀", 3, 0, "NEXT_DAY");
+            addChoice("ก็ต้องชนะเธอสิ 🔥", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D1_B")) {
+            currentScene = new Dialogue("ไอซ์: \"กลัวแพ้เหรอ\"");
+            addChoice("ไม่ได้กลัว แค่อยากคุยมากกว่า ✨", 5, 0, "NEXT_DAY");
+            addChoice("ก็ใช่... 🤐", -5, 0, "NEXT_DAY");
+            addChoice("แข่งครึ่งเดียวพอ 🏀", 3, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D1_C")) {
+            currentScene = new Dialogue("ไอซ์: \"ถ้าไม่จริงจังก็อย่าพูดแบบนั้น\"");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
+            addChoice("ก็เรื่องจริง 🙄", -10, 0, "NEXT_DAY");
+            addChoice("(เงียบ) 🤐", -5, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runIceDay2() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 2: ซ้อมวิ่งตอนเย็น --- 🏃\nไอซ์: \"จะวิ่งด้วยไหม\"");
+            addChoice("วิ่งด้วย 🏃", 10, 0, "ICE_D2_A");
+            addChoice("เชียร์อยู่ข้างสนาม 📣", 3, 0, "ICE_D2_B");
+            addChoice("บ่นว่าเหนื่อย 😫", -5, 0, "ICE_D2_C");
+        } else if (gameState.equals("ICE_D2_A")) {
+            currentScene = new Dialogue("เธอชะลอความเร็วรอคุณ...");
+            addChoice("เธอเก่งมาก 👍✨", 10, 0, "NEXT_DAY");
+            addChoice("เหนื่อยไหม? 🥤", 3, 0, "NEXT_DAY");
+            addChoice("ช้ากว่านี้ได้ไหม 😫", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D2_B")) {
+            currentScene = new Dialogue("เธอวิ่งไปมองคุณไป...");
+            addChoice("ส่งน้ำให้ 🥤", 5, 0, "NEXT_DAY");
+            addChoice("เล่นมือถือ 📱", -5, 0, "NEXT_DAY");
+            addChoice("ตะโกนแซว 📣", 3, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D2_C")) {
+            currentScene = new Dialogue("เธอวิ่งต่อโดยไม่สนใจ...");
+            addChoice("เดินตาม 🚶", 3, 0, "NEXT_DAY");
+            addChoice("กลับก่อน 👋", -5, 0, "NEXT_DAY");
+            addChoice("ตะโกนบ่น 😫", -10, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runIceDay3() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 3: โปรเจกต์เรียน --- 📚\nไอซ์: \"ช่วยดูแบบแปลนหน่อย\"");
+            addChoice("วิเคราะห์จริงจัง 📐", 10, 0, "ICE_D3_A");
+            addChoice("ฟังเฉย ๆ 🎧", 0, 0, "ICE_D3_B");
+            addChoice("บอกว่ายากเกิน 😫", -5, 0, "ICE_D3_C");
+        } else if (gameState.equals("ICE_D3_A")) {
+            currentScene = new Dialogue("เธอเริ่มพึ่งคุณมากขึ้น...");
+            addChoice("อยู่ช่วยจนเสร็จ ✨", 10, 0, "NEXT_DAY");
+            addChoice("ช่วยบางส่วน 👍", 3, 0, "NEXT_DAY");
+            addChoice("บ่นว่าเสียเวลา 🙄", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D3_B")) {
+            currentScene = new Dialogue("บรรยากาศค่อนข้างเงียบ...");
+            addChoice("ถามเพิ่ม? ❓", 5, 0, "NEXT_DAY");
+            addChoice("เงียบต่อไป... 🤐", -3, 0, "NEXT_DAY");
+            addChoice("เปลี่ยนเรื่อง 💬", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D3_C")) {
+            currentScene = new Dialogue("เธอขมวดคิ้วเล็กน้อย...");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
+            addChoice("ยืนยันไม่ช่วย 🙅", -10, 0, "NEXT_DAY");
+            addChoice("ลุกออก 👋", -10, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runIceDay4() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue(
+                    "--- DAY 4: คาเฟ่เงียบ --- ☕\nไอซ์: \"บางทีฉันก็เหนื่อยนะ ที่ต้องเก่งตลอด...\"");
+            addChoice("เธอไม่ต้องเก่งตลอดก็ได้ ✨", 10, 0, "ICE_D4_A");
+            addChoice("ก็เธอเลือกเอง 🙄", -5, 0, "ICE_D4_B");
+            addChoice("เงียบฟัง 🎧", 3, 0, "ICE_D4_C");
+        } else if (gameState.equals("ICE_D4_A")) {
+            currentScene = new Dialogue("เธอมองคุณนานขึ้น...");
+            addChoice("ฉันอยากเป็นที่พักให้เธอ 💖", 10, 0, "NEXT_DAY");
+            addChoice("ยิ้มให้ 😊", 3, 0, "NEXT_DAY");
+            addChoice("หัวเราะกลบ 😅", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D4_B")) {
+            currentScene = new Dialogue("ไอซ์ดูจะผิดหวังเล็กน้อย...");
+            addChoice("แก้คำพูด 🥺", 3, 0, "NEXT_DAY");
+            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY");
+            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("ICE_D4_C")) {
+            currentScene = new Dialogue("บรรยากาศอ่อนโยนขึ้น...");
+            addChoice("จับมือเธอ 🤝💖", 10, 0, "NEXT_DAY");
+            addChoice("บอกว่าเข้าใจนะ ✨", 3, 0, "NEXT_DAY");
+            addChoice("ล้อเล่นนิดหน่อย 😋", -5, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runIceDay5() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue(
+                    "--- DAY 5: สารภาพ --- 🏀💖\n'เซนต์': \"ฉันไม่ได้อยากชนะเกม แต่อยากอยู่ข้างเธอ\"");
+            addChoice("จริงจังลึกซึ้ง 💎💖", 10, 0, "FINAL");
+            addChoice("พูดแบบเขิน ๆ 😳💓", 3, 0, "FINAL");
+            addChoice("พูดท้าทาย 🔥", -5, 0, "FINAL");
+        }
+        updateUI();
     }
 
     private void updateUI() {
