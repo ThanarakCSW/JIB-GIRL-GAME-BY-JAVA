@@ -185,6 +185,8 @@ public class GameGui extends JFrame {
             loadMaprangRoute();
         } else if (characterKey.equalsIgnoreCase("Ice")) {
             loadIceRoute();
+        } else if (characterKey.equalsIgnoreCase("Kanom")) {
+            loadKanomRoute();
         } else {
             dialogueArea.setText("เนื้อเรื่องของ " + characterKey + " ยังไม่พร้อมใช้งานนะจ๊ะ ✨");
         }
@@ -230,6 +232,28 @@ public class GameGui extends JFrame {
                 break;
             case 5:
                 runIceDay5();
+                break;
+            default:
+                showEnding();
+        }
+    }
+
+    private void loadKanomRoute() {
+        switch (day) {
+            case 1:
+                runKanomDay1();
+                break;
+            case 2:
+                runKanomDay2();
+                break;
+            case 3:
+                runKanomDay3();
+                break;
+            case 4:
+                runKanomDay4();
+                break;
+            case 5:
+                runKanomDay5();
                 break;
             default:
                 showEnding();
@@ -351,6 +375,13 @@ public class GameGui extends JFrame {
                 endingText = "🏆 HAPPY ENDING: \"งั้นฉันยอมแพ้ให้นายครั้งหนึ่ง... เป็นคู่แข่งที่ดีที่สุดก็พอ\" 🏀💖";
             else
                 endingText = "🏟️ NORMAL ENDING: \"นายนี่มัน... ยังไม่พร้อมจะเดินข้างฉันหรอกนะ\" 👋";
+        } else if (characterKey.equalsIgnoreCase("Kanom")) {
+            if (score >= 40)
+                endingText = "📸 HAPPY ENDING: \"งั้นเราไปเที่ยวด้วยกันทั้งชีวิตเลยไหม!\" 💖🏖️";
+            else if (score >= 20)
+                endingText = "✨ NORMAL ENDING: \"เพื่อนเที่ยวตลอดไปนะ!\" 🗺️🌸";
+            else
+                endingText = "💔 BAD ENDING: \"นายดูไม่อินกับโลกของฉันเลย...\" 👋";
         } else {
             endingText = "✨ จบการเดินทาง... คะแนนของคุณคือ: " + score;
         }
@@ -502,6 +533,120 @@ public class GameGui extends JFrame {
             addChoice("จริงจังลึกซึ้ง 💎💖", 10, 0, "FINAL");
             addChoice("พูดแบบเขิน ๆ 😳💓", 3, 0, "FINAL");
             addChoice("พูดท้าทาย 🔥", -5, 0, "FINAL");
+        }
+        updateUI();
+    }
+
+    // ======================
+    // KANOM ROUTE DAYS
+    // ======================
+
+    private void runKanomDay1() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 1: คาเฟ่ --- 📸\nขนม: \"ช่วยถ่ายรูปให้หน่อย!\"");
+            addChoice("ถ่ายสวยมาก ✨", 10, 0, "KANOM_D1_A");
+            addChoice("ธรรมดา 😐", 3, 0, "KANOM_D1_B");
+            addChoice("ถ่ายพลาด 😅", -5, 0, "KANOM_D1_C");
+        } else if (gameState.equals("KANOM_D1_A")) {
+            currentScene = new Dialogue("ขนม: \"ว้าว นายถ่ายเก่ง!\"");
+            addChoice("เพราะคนในรูปน่ารัก ✨", 10, 0, "NEXT_DAY");
+            addChoice("ก็พอได้ 👍", 3, 0, "NEXT_DAY");
+            addChoice("กล้องดี 📸", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D1_B")) {
+            currentScene = new Dialogue("ขนมพยักหน้าเบา ๆ...");
+            addChoice("ชมเพิ่ม ✨", 5, 0, "NEXT_DAY");
+            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY");
+            addChoice("แซวแรง 😜", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D1_C")) {
+            currentScene = new Dialogue("ขนมทำหน้ามุ่ยเล็กน้อย...");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
+            addChoice("โทษเธอ 🙄", -10, 0, "NEXT_DAY");
+            addChoice("หัวเราะใส่ 😂", -5, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runKanomDay2() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 2: วางแผนเที่ยว --- 🏖️\nขนม: \"อยากไปทะเล!\"");
+            addChoice("เสนอแผนจริงจัง 🗺️✨", 10, 0, "KANOM_D2_A");
+            addChoice("ฟังเฉย ๆ 🎧", 3, 0, "KANOM_D2_B");
+            addChoice("บอกเปลืองเงิน 💸", -5, 0, "KANOM_D2_C");
+        } else if (gameState.equals("KANOM_D2_A")) {
+            currentScene = new Dialogue("ขนมตาเป็นประกาย...");
+            addChoice("อาสาไปด้วย 🚗💨", 10, 0, "NEXT_DAY");
+            addChoice("ช่วยวางแผน ✨", 5, 0, "NEXT_DAY");
+            addChoice("เปลี่ยนใจ 😶", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D2_B")) {
+            currentScene = new Dialogue("ขนมเล่าแผนของเธอต่อ...");
+            addChoice("ชมไอเดีย 👍", 3, 0, "NEXT_DAY");
+            addChoice("เล่นมือถือ 📱", -5, 0, "NEXT_DAY");
+            addChoice("ล้อเล่น 😋", 0, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D2_C")) {
+            currentScene = new Dialogue("ขนมเงียบไป...");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
+            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY");
+            addChoice("เดินหนี 🚶", -10, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runKanomDay3() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 3: สวนสาธารณะ --- 🏞️\nขนมเครียดยอดวิวตก...");
+            addChoice("ยอดไม่สำคัญเท่าความสุข ✨", 10, 0, "KANOM_D3_A");
+            addChoice("เดี๋ยวก็ดีขึ้น 👍", 3, 0, "KANOM_D3_B");
+            addChoice("ต้องพยายามมากกว่านี้ 🔥", -5, 0, "KANOM_D3_C");
+        } else if (gameState.equals("KANOM_D3_A")) {
+            currentScene = new Dialogue("เธอดูผ่อนคลายลง...");
+            addChoice("อยู่ปลอบจนยิ้ม 😊💖", 10, 0, "NEXT_DAY");
+            addChoice("เล่าเรื่องขำ ๆ 😂", 3, 0, "NEXT_DAY");
+            addChoice("รีบกลับ 👋", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D3_B")) {
+            currentScene = new Dialogue("เธอยังดูไม่ค่อยสบายใจนัก...");
+            addChoice("ช่วยคิดคอนเทนต์ 💡", 5, 0, "NEXT_DAY");
+            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY");
+            addChoice("เปลี่ยนเรื่อง 💬", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D3_C")) {
+            currentScene = new Dialogue("ขนมหน้าเครียดกว่าเดิม...");
+            addChoice("แก้คำพูด 🥺", 3, 0, "NEXT_DAY");
+            addChoice("ย้ำคำเดิม 🤐", -10, 0, "NEXT_DAY");
+            addChoice("ล้อแรง 😜", -10, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runKanomDay4() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 4: สวนสาธารณะ --- 🌳\nขนม: \"อยู่กับนายแล้วสบายใจนะ\"");
+            addChoice("ฉันก็เหมือนกัน ✨", 10, 0, "KANOM_D4_A");
+            addChoice("ก็ดี 👍", 3, 0, "KANOM_D4_B");
+            addChoice("ก็ปกติ 😐", -5, 0, "KANOM_D4_C");
+        } else if (gameState.equals("KANOM_D4_A")) {
+            currentScene = new Dialogue("บรรยากาศเป็นใจสุด ๆ...");
+            addChoice("จับมือ 🤝💖", 10, 0, "NEXT_DAY");
+            addChoice("ยิ้มเขิน 😊😳", 3, 0, "NEXT_DAY");
+            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D4_B")) {
+            currentScene = new Dialogue("ขนมยิ้มกว้าง...");
+            addChoice("พูดเพิ่ม ✨", 5, 0, "NEXT_DAY");
+            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY");
+            addChoice("แซวแรง 😜", -5, 0, "NEXT_DAY");
+        } else if (gameState.equals("KANOM_D4_C")) {
+            currentScene = new Dialogue("เธอดูเศร้าลงเล็กน้อย...");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
+            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY");
+            addChoice("หัวเราะใส่ 😂", -5, 0, "NEXT_DAY");
+        }
+        updateUI();
+    }
+
+    private void runKanomDay5() {
+        if (gameState.equals("START")) {
+            currentScene = new Dialogue("--- DAY 5: สารภาพ --- 💖✨\n'เซนต์': \"ทุกวันที่อยู่กับเธอ มันสนุกจริง ๆ\"");
+            addChoice("พูดตรง ๆ 💎💖", 10, 0, "FINAL");
+            addChoice("พูดเขิน ๆ 😳💓", 3, 0, "FINAL");
+            addChoice("พูดเล่น 🍬", -5, 0, "FINAL");
         }
         updateUI();
     }

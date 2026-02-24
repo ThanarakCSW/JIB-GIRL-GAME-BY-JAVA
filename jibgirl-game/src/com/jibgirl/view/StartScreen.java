@@ -8,7 +8,7 @@ import com.jibgirl.utils.UIUtils;
 public class StartScreen extends JFrame {
 
     public StartScreen() {
-        setTitle("💖 Jib Girl Game - Cute Edition 💖");
+        setTitle("💖 Jib Girl Game 💖");
         setSize(900, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -17,35 +17,12 @@ public class StartScreen extends JFrame {
         BackgroundPanel background = new BackgroundPanel("/com/jibgirl/asset/start.jpg");
         background.setLayout(new BorderLayout());
 
-        // ===== Title Panel =====
-        JPanel titlePanel = new JPanel(new GridBagLayout());
-        titlePanel.setOpaque(false);
-        JLabel titleLabel = new JLabel("✨ JIB GIRL ✨", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Tahoma", Font.BOLD, 72));
-        titleLabel.setForeground(Color.WHITE);
-
-        JLabel subtitleLabel = new JLabel("~ Premium Dating Sim ~", SwingConstants.CENTER);
-        subtitleLabel.setFont(new Font("Tahoma", Font.ITALIC, 24));
-        subtitleLabel.setForeground(UIUtils.PASTEL_PINK);
-
-        JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setOpaque(false);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        centerPanel.add(titleLabel);
-        centerPanel.add(subtitleLabel);
-
-        titlePanel.add(centerPanel);
-        background.add(titlePanel, BorderLayout.CENTER);
-
         // ===== Bottom Panel =====
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         bottomPanel.setOpaque(false);
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 100, 0));
 
-        PremiumButton startButton = new PremiumButton("เริ่มต้นความรักกันเถอะ! 💞✨");
+        PremiumButton startButton = new PremiumButton("เริ่มเกม! 💞✨");
         startButton.setCute(true);
         startButton.setFont(new Font("Tahoma", Font.BOLD, 28));
         startButton.setPreferredSize(new Dimension(400, 80));
