@@ -30,6 +30,10 @@ public class Player {
         return false;
     }
 
+    public boolean canSpendMoney(int amount) {
+        return this.money >= amount;
+    }
+
     public int getMoney() {
         return money;
     }

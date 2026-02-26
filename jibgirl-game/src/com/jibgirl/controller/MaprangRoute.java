@@ -6,11 +6,13 @@ import java.util.Scanner;
 public class MaprangRoute {
     private Player player;
     private ChoiceManager manager;
+    private StaminaManager staminaManager;
     private Scanner scanner;
 
     public MaprangRoute(Player player) {
         this.player = player;
         this.manager = new ChoiceManager();
+        this.staminaManager = new StaminaManager();
         this.scanner = new Scanner(System.in);
     }
 
@@ -35,7 +37,8 @@ public class MaprangRoute {
         int choice1 = displayAndGetChoice(d1);
         if (choice1 == 1) { // A
             Dialogue d2a = new Dialogue("🔀 Choice 2A");
-            d2a.addChoice(new Choice("พูดเฉพาะกับคนพิเศษ", 10, 0, "มะปราง: \"คุณพูดแบบนี้แล้วฉันทำตัวไม่ถูกเลยค่ะ…\" (เธอเริ่มเปิดใจ)"));
+            d2a.addChoice(new Choice("พูดเฉพาะกับคนพิเศษ", 10, 0,
+                    "มะปราง: \"คุณพูดแบบนี้แล้วฉันทำตัวไม่ถูกเลยค่ะ…\" (เธอเริ่มเปิดใจ)"));
             d2a.addChoice(new Choice("ชมตามมารยาท", 0, 0, "\"อ๋อ แบบสุภาพสินะคะ\" (บรรยากาศกลาง ๆ)"));
             d2a.addChoice(new Choice("ก็ชมทุกคน", -5, 0, "เธอหลบตา (จบวันเร็ว)"));
             displayAndGetChoice(d2a);
@@ -186,9 +189,9 @@ public class MaprangRoute {
                 scanner.next();
             }
         }
-        
+
         Choice selected = d.getChoices().get(userChoice - 1);
-        manager.selectChoice(player, selected);
+        manager.selectChoice(player, selected, staminaManager);
         return userChoice;
     }
 

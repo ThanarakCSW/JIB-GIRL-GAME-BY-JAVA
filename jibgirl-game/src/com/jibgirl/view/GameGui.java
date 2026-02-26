@@ -1,30 +1,37 @@
 package com.jibgirl.view;
 
-import com.jibgirl.model.Player;
-import com.jibgirl.model.Dialogue;
-import com.jibgirl.model.Choice;
 import com.jibgirl.controller.ChoiceManager;
-import com.jibgirl.main.Shop.ShopUI;
+import com.jibgirl.controller.SceneFactory;
+import com.jibgirl.controller.StaminaManager;
 import com.jibgirl.main.Inventrory.Inventory;
-import com.jibgirl.utils.UIUtils.*;
+import com.jibgirl.main.Shop.ShopUI;
+import com.jibgirl.model.Choice;
+import com.jibgirl.model.Dialogue;
+import com.jibgirl.model.Player;
+import com.jibgirl.model.Scene;
 import com.jibgirl.utils.UIUtils;
-
+import com.jibgirl.utils.UIUtils.ModernPanel;
+import com.jibgirl.utils.UIUtils.NeonProgressBar;
+import com.jibgirl.utils.UIUtils.PremiumButton;
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
 
 public class GameGui extends JFrame {
 
     private Player player;
     private Dialogue currentScene;
     private ChoiceManager manager;
+    private StaminaManager staminaManager;
     private Inventory inventory;
     private String characterKey;
     private int day = 1;
     private String gameState = "START";
+    private boolean isShy = false; // Track if character is currently shy
 
     private JLabel moneyLabel;
     private NeonProgressBar affectionBar;
+    private NeonProgressBar staminaBar;
     private JTextArea dialogueArea;
     private JPanel buttonPanel;
     private JLabel dayLabel;
@@ -36,6 +43,7 @@ public class GameGui extends JFrame {
         this.characterKey = characterKey;
         this.player = new Player("เซนต์", 1000);
         this.manager = new ChoiceManager();
+        this.staminaManager = new StaminaManager();
         this.inventory = new Inventory();
 
         setTitle("💖 Jib Girl Game - Cute Edition 💖");
@@ -44,7 +52,8 @@ public class GameGui extends JFrame {
         setLocationRelativeTo(null);
 
         // Kawaii Background
-        setContentPane(new BackgroundPanel("/com/jibgirl/asset/bg.jpg"));
+        BackgroundPanel bgPanel = new BackgroundPanel("/com/jibgirl/asset/bg.jpg");
+        setContentPane(bgPanel);
         getContentPane().setLayout(new BorderLayout());
 
         // ======================
@@ -92,6 +101,24 @@ public class GameGui extends JFrame {
         leftPanel.add(Box.createVerticalStrut(10));
         leftPanel.add(shopBtn);
         statusHeader.add(leftPanel, BorderLayout.WEST);
+
+        // Center: Stamina Bar
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setOpaque(false);
+        centerPanel.setBorder(new EmptyBorder(0, 20, 0, 20));
+
+        JLabel staminaLabelTop = new JLabel("⚡ Stamina", SwingConstants.CENTER);
+        staminaLabelTop.setForeground(new Color(100, 100, 50));
+        staminaLabelTop.setFont(new Font("Tahoma", Font.BOLD, 12));
+
+        staminaBar = new NeonProgressBar();
+        staminaBar.setStamina(true); // Pastel yellow for stamina
+        staminaBar.setValue(staminaManager.getStamina());
+        staminaBar.setPreferredSize(new Dimension(120, 10)); // [AESTHETIC] Reduced size
+
+        centerPanel.add(staminaLabelTop, BorderLayout.NORTH);
+        centerPanel.add(staminaBar, BorderLayout.CENTER);
+        statusHeader.add(centerPanel, BorderLayout.CENTER);
 
         // East: Day & Inventory
         JPanel rightPanel = new JPanel();
@@ -175,12 +202,102 @@ public class GameGui extends JFrame {
         setVisible(true);
     }
 
+    public void setBackgroundImage(String fileName) {
+        if (getContentPane() instanceof BackgroundPanel) {
+            ((BackgroundPanel) getContentPane()).setBackgroundImage(fileName);
+        }
+    }
+
+    public void setCharacterImage(String fileName) {
+        if (getContentPane() instanceof BackgroundPanel) {
+            ((BackgroundPanel) getContentPane()).setCharacterImage(fileName);
+        }
+    }
+
     public void refreshStatus() {
         updateUI();
     }
 
+    /**
+     * Trigger the confession scene when stamina is depleted
+     */
+    private void triggerConfessionScene() {
+        isShy = true; // Always shy during confession
+        setBackgroundImage("/com/jibgirl/asset/classroom.png"); // Confession is always in Classroom
+        buttonPanel.removeAll();
+        Scene confessionScene = SceneFactory.createClassroomConfession(characterKey);
+        Dialogue confessionDialogue = confessionScene.getDialogue();
+
+        dialogueArea.setText(confessionDialogue.getQuestion());
+        // Set character to shy again just in case
+        String charPrefix = characterKey.toLowerCase();
+        setCharacterImage("/com/jibgirl/asset/" + charPrefix + "_shy.png");
+
+        // Add confession choices
+        for (Choice choice : confessionDialogue.getChoices()) {
+            PremiumButton btn = new PremiumButton(choice.getText());
+            btn.setCute(true);
+            btn.setPreferredSize(new Dimension(240, 45));
+            btn.setMaximumSize(new Dimension(240, 45));
+            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            btn.addActionListener(e -> {
+                manager.selectChoice(player, choice, staminaManager);
+                // After confession, show ending
+                gameState = "ENDED";
+                day = 6;
+                showEnding();
+            });
+
+            buttonPanel.add(btn);
+            buttonPanel.add(Box.createVerticalStrut(10));
+        }
+
+        buttonPanel.revalidate();
+        buttonPanel.repaint();
+    }
+
+    private void triggerBadEnd() {
+        setBackgroundImage("/com/jibgirl/asset/start.jpg"); // Return to home theme or similar
+        buttonPanel.removeAll();
+        Scene badEndScene = SceneFactory.createBadEndScene(characterKey);
+        Dialogue dialogue = badEndScene.getDialogue();
+
+        dialogueArea.setText(dialogue.getQuestion());
+        // Clear character sprite for bad end? Or show normal/sad?
+        // Showing normal as a "friendzone" look
+        String charPrefix = characterKey.toLowerCase();
+        setCharacterImage("/com/jibgirl/asset/" + charPrefix + "_normal.png");
+
+        for (Choice choice : dialogue.getChoices()) {
+            PremiumButton btn = new PremiumButton(choice.getText());
+            btn.setCute(false); // Not cute anymore!
+            btn.setChoiceStyle(true); // Red style
+            btn.setPreferredSize(new Dimension(240, 45));
+            btn.setMaximumSize(new Dimension(240, 45));
+            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            btn.addActionListener(e -> {
+                // Return to selection screen
+                new CharacterSelectionScreen();
+                dispose();
+            });
+
+            buttonPanel.add(btn);
+            buttonPanel.add(Box.createVerticalStrut(10));
+        }
+
+        buttonPanel.revalidate();
+        buttonPanel.repaint();
+    }
+
     private void loadScene() {
         buttonPanel.removeAll();
+        // Set character image - use shy if isShy is true, otherwise normal
+        String charPrefix = characterKey.toLowerCase();
+        String expression = isShy ? "_shy.png" : "_normal.png";
+        setCharacterImage("/com/jibgirl/asset/" + charPrefix + expression);
+
         if (characterKey.equalsIgnoreCase("Maprang")) {
             loadMaprangRoute();
         } else if (characterKey.equalsIgnoreCase("Ice")) {
@@ -261,100 +378,105 @@ public class GameGui extends JFrame {
     }
 
     private void runDay1() {
+        setBackgroundImage("/com/jibgirl/asset/artroom.png");
         if (gameState.equals("START")) {
             currentScene = new Dialogue(
                     "--- DAY 1: ห้องศิลปะ --- 🖌️\n'มะปราง': \"หมายถึงแมว…หรือฉันคะ?\" เธอจ้องมองคุณด้วยความสงสัย");
-            addChoice("คุณนั่นแหละครับ ✨", 10, 0, "D1_CHOICE1_A");
-            addChoice("หมายถึงแมวครับ 🐈", 3, 0, "D1_CHOICE1_B");
-            addChoice("พูดเล่นครับ 😋", -5, 0, "D1_CHOICE1_C");
+            addChoice("คุณนั่นแหละครับ ✨", 10, 0, "D1_CHOICE1_A", 5);
+            addChoice("หมายถึงแมวครับ 🐈", 3, 0, "D1_CHOICE1_B", 5);
+            addChoice("พูดเล่นครับ 😋", -5, 0, "D1_CHOICE1_C", 5);
         } else if (gameState.equals("D1_CHOICE1_A")) {
             currentScene = new Dialogue("มะปรางหน้าแดง \"เขินนะคะ… คุณพูดแบบนี้บ่อยเหรอ?\"");
-            addChoice("พูดเฉพาะคนพิเศษ 💖", 10, 0, "NEXT_DAY");
-            addChoice("ชมตามมารยาท ✨", 0, 0, "NEXT_DAY");
-            addChoice("ชมทุกคนแหละ 😜", -5, 0, "NEXT_DAY");
+            addChoice("พูดเฉพาะคนพิเศษ 💖", 10, 0, "NEXT_DAY", 3);
+            addChoice("ชมตามมารยาท ✨", 0, 0, "NEXT_DAY", 3);
+            addChoice("ชมทุกคนแหละ 😜", -5, 0, "NEXT_DAY", 3);
         } else if (gameState.equals("D1_CHOICE1_B")) {
             currentScene = new Dialogue("มะปราง: \"อ๋อ แมวตัวนี้เองเหรอคะ ก็น่ารักดีค่ะ\"");
-            addChoice("เหมือนเจ้าของเลย ✨", 10, 0, "NEXT_DAY");
-            addChoice("มันดูสบายดีนะ 🐾", 3, 0, "NEXT_DAY");
-            addChoice("ก็ธรรมดานะ 😐", -5, 0, "NEXT_DAY");
+            addChoice("เหมือนเจ้าของเลย ✨", 10, 0, "NEXT_DAY", 3);
+            addChoice("มันดูสบายดีนะ 🐾", 3, 0, "NEXT_DAY", 3);
+            addChoice("ก็ธรรมดานะ 😐", -5, 0, "NEXT_DAY", 3);
         } else if (gameState.equals("D1_CHOICE1_C")) {
             currentScene = new Dialogue("บรรยากาศจืดสนิท มะปรางขมวดคิ้วเล็กน้อย");
-            addChoice("ขอโทษนะ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ก็จริงนี่ 🙄", -10, 0, "NEXT_DAY");
-            addChoice("(เงียบไปเลย) 🤐", -5, 0, "NEXT_DAY");
+            addChoice("ขอโทษนะ 🥺", 3, 0, "NEXT_DAY", 3);
+            addChoice("ก็จริงนี่ 🙄", -10, 0, "NEXT_DAY", 3);
+            addChoice("(เงียบไปเลย) 🤐", -5, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runDay2() {
+        setBackgroundImage("/com/jibgirl/asset/classroom.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 2: ลานชมวิว --- 🌅\nมะปราง: \"ฉันชอบแสงแบบนี้ค่ะ มันทำให้ใจสงบดี\"");
-            addChoice("ทำไมถึงชอบ? 🦋", 10, 0, "D2_A");
-            addChoice("สวยเหมือนเธอ ✨", 5, 0, "D2_A");
-            addChoice("เหมือนทุกวัน 😴", -5, 0, "D2_C");
+            currentScene = new Dialogue("--- DAY 2: ห้องเรียน --- 🌅\nมะปราง: \"ฉันอบอุ่นที่นี่ค่ะ มันทำให้ใจสงบดี\"");
+            addChoice("ทำไมถึงชอบ? 🦋", 10, 0, "D2_A", 5);
+            addChoice("สวยเหมือนเธอ ✨", 5, 0, "D2_A", 5);
+            addChoice("เหมือนทุกวัน 😴", -5, 0, "D2_C", 5);
         } else if (gameState.equals("D2_A")) {
             currentScene = new Dialogue("เธอยิ้มและเริ่มเล่าเรื่องตอนเด็กให้คุณฟัง...");
-            addChoice("เธอเก่งจัง 🌸", 10, 0, "NEXT_DAY");
-            addChoice("เธอน่ารักจัง 😊", 5, 0, "NEXT_DAY");
-            addChoice("คิดมากไปไหม? 🤨", -10, 0, "NEXT_DAY");
+            addChoice("เธอเก่งจัง 🌸", 10, 0, "NEXT_DAY", 5);
+            addChoice("เธอน่ารักจัง 😊", 5, 0, "NEXT_DAY", 5);
+            addChoice("คิดมากไปไหม? 🤨", -10, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("D2_C")) {
             currentScene = new Dialogue("เธอเงียบลงและก้มหน้ามองพื้น...");
-            addChoice("ขอโทษนะ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("พูดความจริง 😐", -5, 0, "NEXT_DAY");
-            addChoice("กลับกันเถอะ 🚶", -10, 0, "NEXT_DAY");
+            addChoice("ขอโทษนะ 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("พูดความจริง 😐", -5, 0, "NEXT_DAY", 5);
+            addChoice("กลับกันเถอะ 🚶", -10, 0, "NEXT_DAY", 5);
         }
         updateUI();
     }
 
     private void runDay3() {
+        setBackgroundImage("/com/jibgirl/asset/clubroom.png");
         if (gameState.equals("START")) {
             currentScene = new Dialogue(
-                    "--- DAY 3: เตรียมนิทรรศการ --- 🎨\nมะปราง: \"ช่วยเลือกโทนสีหน่อยได้ไหมคะ ฉันลังเลจัง\"");
-            addChoice("ช่วยเลือกเต็มที่ 🖌️", 10, 0, "D3_A");
-            addChoice("อะไรก็ได้ที่ชอบ ✨", 5, 0, "D3_A");
-            addChoice("ไม่รู้เรื่องหรอก 💤", -10, 0, "D3_C");
+                    "--- DAY 3: ห้องชมรม --- 🎨\nมะปราง: \"ช่วยเลือกโทนสีหน่อยได้ไหมคะ ฉันลังเลจัง\"");
+            addChoice("ช่วยเลือกเต็มที่ 🖌️", 10, 0, "D3_A", 15);
+            addChoice("อะไรก็ได้ที่ชอบ ✨", 5, 0, "D3_A", 10);
+            addChoice("ไม่รู้เรื่องหรอก 💤", -10, 0, "D3_C", 3);
         } else if (gameState.equals("D3_A")) {
             currentScene = new Dialogue("เธอประทับใจที่คุณใส่ใจรายละเอียดงานของเธอ");
-            addChoice("จะอยู่ช่วยจนเสร็จ 💖", 10, 0, "NEXT_DAY");
-            addChoice("ช่วยก็สนุกดี 😊", 5, 0, "NEXT_DAY");
-            addChoice("เหนื่อยจัง 🥱", -5, 0, "NEXT_DAY");
+            addChoice("จะอยู่ช่วยจนเสร็จ 💖", 10, 0, "NEXT_DAY", 20);
+            addChoice("ช่วยก็สนุกดี 😊", 5, 0, "NEXT_DAY", 15);
+            addChoice("เหนื่อยจัง 🥱", -5, 0, "NEXT_DAY", 3);
         } else if (gameState.equals("D3_C")) {
             currentScene = new Dialogue("เธอพยักหน้าเบา ๆ แล้วหันไปวาดต่อเงียบ ๆ");
-            addChoice("ขอโทษ เดี๋ยวช่วย 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ไปนั่งพัก 💤", -10, 0, "NEXT_DAY");
-            addChoice("ขอตัวก่อน 👋", -10, 0, "NEXT_DAY");
+            addChoice("ขอโทษ เดี๋ยวช่วย 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("ไปนั่งพัก 💤", -10, 0, "NEXT_DAY", 5);
+            addChoice("ขอตัวก่อน 👋", -10, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runDay4() {
+        setBackgroundImage("/com/jibgirl/asset/cafe.png");
         if (gameState.equals("START")) {
             currentScene = new Dialogue(
-                    "--- DAY 4: คาเฟ่ริมน้ำ --- ☕\nมะปราง: \"ถ้าวันหนึ่งฉันวาดไม่เก่งแล้ว คุณยังจะอยู่ไหมคะ?\"");
-            addChoice("ชอบที่ตัวตนเธอ 💖", 10, 0, "D4_A");
-            addChoice("ฝึกใหม่ด้วยกัน ✨", 5, 0, "D4_A");
-            addChoice("หาอย่างอื่นทำ 😐", -10, 0, "D4_C");
+                    "--- DAY 4: คาเฟ่ --- ☕\nมะปราง: \"ถ้าวันหนึ่งฉันวาดไม่เก่งแล้ว คุณยังจะอยู่ไหมคะ?\"");
+            addChoice("ชอบที่ตัวตนเธอ 💖", 10, 0, "D4_A", 5);
+            addChoice("ฝึกใหม่ด้วยกัน ✨", 5, 0, "D4_A", 5);
+            addChoice("หาอย่างอื่นทำ 😐", -10, 0, "D4_C", 5);
         } else if (gameState.equals("D4_A")) {
             currentScene = new Dialogue("เธอนิ่งไปครู่หนึ่ง แล้วยิ้มออกมาด้วยความโล่งใจ");
-            addChoice("จับมือเบา ๆ 🙏💖", 10, 0, "NEXT_DAY");
-            addChoice("ยิ้มให้อ่อนโยน 😊", 5, 0, "NEXT_DAY");
-            addChoice("หัวเราะแก้เขิน 😅", -5, 0, "NEXT_DAY");
+            addChoice("จับมือเบา ๆ 🙏💖", 10, 0, "NEXT_DAY", 8);
+            addChoice("ยิ้มให้อ่อนโยน 😊", 5, 0, "NEXT_DAY", 5);
+            addChoice("หัวเราะแก้เขิน 😅", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("D4_C")) {
             currentScene = new Dialogue("บรรยากาศในคาเฟ่เริ่มอึดอัด...");
-            addChoice("ล้อเล่นนะ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("พูดตามจริง ✨", -10, 0, "NEXT_DAY");
-            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY");
+            addChoice("ล้อเล่นนะ 🥺", 3, 0, "NEXT_DAY", 5);
+            addChoice("พูดตามจริง ✨", -10, 0, "NEXT_DAY", 5);
+            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY", 5);
         }
         updateUI();
     }
 
     private void runDay5() {
+        setBackgroundImage("/com/jibgirl/asset/basketball.png");
         if (gameState.equals("START")) {
             currentScene = new Dialogue(
-                    "--- DAY 5: การสารภาพรัก --- 💖\n'เซนต์': \"ผมว่าเราอยู่ด้วยกันแบบนี้ก็ดีนะ... ผมชอบเธอนะ มะปราง\"");
-            addChoice("สารภาพจริงใจ 💎💖", 10, 0, "FINAL");
-            addChoice("สารภาพเขิน ๆ 😳💓", 5, 0, "FINAL");
-            addChoice("พูดติดตลก 🍭", -5, 0, "FINAL");
+                    "--- DAY 5: สนามบาสเกตบอล --- 🏀\n'เซนต์': \"ผมว่าเราอยู่ด้วยกันแบบนี้ก็ดีนะ... ผมชอบเธอนะ มะปราง\"");
+            addChoice("สารภาพจริงใจ 💎💖", 10, 0, "FINAL", 0);
+            addChoice("สารภาพเขิน ๆ 😳💓", 5, 0, "FINAL", 0);
+            addChoice("พูดติดตลก 🍭", -5, 0, "FINAL", 0);
         }
         updateUI();
     }
@@ -398,24 +520,78 @@ public class GameGui extends JFrame {
     }
 
     private void addChoice(String text, int affect, int cost, String nextState) {
-        Choice c = new Choice(text, affect, cost, "");
+        addChoice(text, affect, cost, nextState, 5); // Default stamina cost = 5
+    }
+
+    private void addChoice(String text, int affect, int cost, String nextState, int staminaCost) {
+        Choice c = new Choice(text, affect, cost, "", staminaCost);
         PremiumButton btn = new PremiumButton(text);
-        btn.setCute(true); // Back to cute theme
+        btn.setCute(true);
         btn.setPreferredSize(new Dimension(240, 45));
         btn.setMaximumSize(new Dimension(240, 45));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Check if choice is affordable (money and stamina)
+        boolean hasMoneyAndStamina = player.canSpendMoney(cost) &&
+                staminaManager.hasEnoughStamina(staminaCost);
+
+        // Disable button if not enough resources
+        if (!hasMoneyAndStamina) {
+            btn.setEnabled(false);
+            btn.setToolTipText((player.canSpendMoney(cost) ? "" : "ไม่มีเงิน | ") +
+                    (staminaManager.hasEnoughStamina(staminaCost) ? "" : "สมดุลชีวิตไม่พอ"));
+        }
+
         btn.addActionListener(e -> {
-            manager.selectChoice(player, c);
-            if (nextState.equals("NEXT_DAY")) {
-                day++;
-                gameState = "START";
-            } else if (nextState.equals("FINAL")) {
-                day = 6;
-                gameState = "ENDED";
+            // Try to execute choice
+            boolean success = manager.selectChoice(player, c, staminaManager);
+
+            if (success) {
+                // If this is a "best" choice (affect >= 5), show shy expression
+                if (affect >= 10) {
+                    System.out.println("💖 คำตอบที่ยอดเยี่ยม! สลับเป็นหน้าเขิน...");
+                    isShy = true;
+                } else {
+                    isShy = false; // Reset to normal if not a "best" choice
+                }
+
+                // Check if stamina depleted
+                // [FIX] Skip hijack if it's Day 5, allowing final progression to ending screen
+                if (staminaManager.isStaminaDepleted() && day < 5) {
+                    if (player.getAffection() < 50) {
+                        System.out.println("❌ สมดุลชีวิตหมด! แต่คะแนนความรักไม่ถึง... Bad End");
+                        triggerBadEnd();
+                    } else {
+                        System.out.println("💤 สมดุลชีวิตหมด! บังคับเข้าห้องเรียน...");
+                        triggerConfessionScene();
+                    }
+                } else {
+                    // Normal progression
+                    if (nextState.equals("NEXT_DAY")) {
+                        day++;
+                        gameState = "START";
+                        isShy = false; // Always reset shy on new day
+                    } else if (nextState.equals("FINAL")) {
+                        day = 6;
+                        gameState = "ENDED";
+                    } else {
+                        gameState = nextState;
+                    }
+                    loadScene();
+                }
             } else {
-                gameState = nextState;
+                // Choice failed - show warning
+                String reason = "";
+                if (!player.canSpendMoney(cost)) {
+                    reason = "เงินไม่พอ";
+                } else if (!staminaManager.hasEnoughStamina(staminaCost)) {
+                    reason = "สมดุลชีวิตไม่พอ";
+                }
+                JOptionPane.showMessageDialog(this,
+                        "ไม่สามารถเลือก: " + reason,
+                        "ไม่สามารถ",
+                        JOptionPane.WARNING_MESSAGE);
             }
-            loadScene();
         });
         buttonPanel.add(btn);
         buttonPanel.add(Box.createVerticalStrut(10));
@@ -426,113 +602,119 @@ public class GameGui extends JFrame {
     // ======================
 
     private void runIceDay1() {
+        setBackgroundImage("/com/jibgirl/asset/artroom.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 1: สนามบาส --- 🏀\nไอซ์: \"จะจีบก็ต้องชนะฉันก่อน\"");
-            addChoice("งั้นเริ่มเลย ✨", 10, 0, "ICE_D1_A");
-            addChoice("ไม่แข่งได้ไหม 🥤", 0, 0, "ICE_D1_B");
-            addChoice("ก็แค่บาสเอง 🏀", -5, 0, "ICE_D1_C");
+            currentScene = new Dialogue("--- DAY 1: ห้องศิลปะ --- 🖌️\nไอซ์: \"นายมาวาดรูปที่นี่ด้วยเหรอ?\"");
+            addChoice("แค่อยากอยู่ใกล้เธอ ✨", 10, 0, "ICE_D1_A", 10);
+            addChoice("มาหาที่สงบ ๆ 🎨", 3, 0, "ICE_D1_B", 5);
+            addChoice("วาดรูปไม่เป็นหรอก 😅", -5, 0, "ICE_D1_C", 5);
         } else if (gameState.equals("ICE_D1_A")) {
-            currentScene = new Dialogue("แข่งกันจริงจัง เหงื่อซึม... ไอซ์: \"ไม่หนีนี่นา\"");
-            addChoice("ฉันไม่หนีอะไรที่สำคัญ ✨", 10, 0, "NEXT_DAY");
-            addChoice("ก็แค่สนุกดี 🏀", 3, 0, "NEXT_DAY");
-            addChoice("ก็ต้องชนะเธอสิ 🔥", -5, 0, "NEXT_DAY");
+            currentScene = new Dialogue("ไอซ์หน้าแดงนิด ๆ... \"พูดอะไรน่ะ นายเนี่ย...\"");
+            addChoice("ฉันไม่หนีอะไรที่สำคัญ ✨", 10, 0, "NEXT_DAY", 10);
+            addChoice("ก็แค่สนุกดี 🏀", 3, 0, "NEXT_DAY", 10);
+            addChoice("ก็ต้องชนะเธอสิ 🔥", -5, 0, "NEXT_DAY", 15);
         } else if (gameState.equals("ICE_D1_B")) {
             currentScene = new Dialogue("ไอซ์: \"กลัวแพ้เหรอ\"");
-            addChoice("ไม่ได้กลัว แค่อยากคุยมากกว่า ✨", 5, 0, "NEXT_DAY");
-            addChoice("ก็ใช่... 🤐", -5, 0, "NEXT_DAY");
-            addChoice("แข่งครึ่งเดียวพอ 🏀", 3, 0, "NEXT_DAY");
+            addChoice("ไม่ได้กลัว แค่อยากคุยมากกว่า ✨", 5, 0, "NEXT_DAY", 5);
+            addChoice("ก็ใช่... 🤐", -5, 0, "NEXT_DAY", 5);
+            addChoice("แข่งครึ่งเดียวพอ 🏀", 3, 0, "NEXT_DAY", 8);
         } else if (gameState.equals("ICE_D1_C")) {
             currentScene = new Dialogue("ไอซ์: \"ถ้าไม่จริงจังก็อย่าพูดแบบนั้น\"");
-            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ก็เรื่องจริง 🙄", -10, 0, "NEXT_DAY");
-            addChoice("(เงียบ) 🤐", -5, 0, "NEXT_DAY");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY", 5);
+            addChoice("ก็เรื่องจริง 🙄", -10, 0, "NEXT_DAY", 5);
+            addChoice("(เงียบ) 🤐", -5, 0, "NEXT_DAY", 5);
         }
         updateUI();
     }
 
     private void runIceDay2() {
+        setBackgroundImage("/com/jibgirl/asset/classroom.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 2: ซ้อมวิ่งตอนเย็น --- 🏃\nไอซ์: \"จะวิ่งด้วยไหม\"");
-            addChoice("วิ่งด้วย 🏃", 10, 0, "ICE_D2_A");
-            addChoice("เชียร์อยู่ข้างสนาม 📣", 3, 0, "ICE_D2_B");
-            addChoice("บ่นว่าเหนื่อย 😫", -5, 0, "ICE_D2_C");
+            currentScene = new Dialogue("--- DAY 2: ห้องเรียน --- 📚\nไอซ์: \"นายช่วยติววิชานี้หน่อยสิ ชักจะงงแล้ว\"");
+            addChoice("ติวให้เต็มที่ ✍️", 10, 0, "ICE_D2_A", 15);
+            addChoice("บอกว่ายากเหมือนกัน 😅", 3, 0, "ICE_D2_B", 5);
+            addChoice("แอบหลับ 💤", -5, 0, "ICE_D2_C", 3);
         } else if (gameState.equals("ICE_D2_A")) {
-            currentScene = new Dialogue("เธอชะลอความเร็วรอคุณ...");
-            addChoice("เธอเก่งมาก 👍✨", 10, 0, "NEXT_DAY");
-            addChoice("เหนื่อยไหม? 🥤", 3, 0, "NEXT_DAY");
-            addChoice("ช้ากว่านี้ได้ไหม 😫", -5, 0, "NEXT_DAY");
+            currentScene = new Dialogue("เธอตั้งใจฟังที่คุณอธิบายมาก...");
+            addChoice("เธอเก่งมาก 👍✨", 10, 0, "NEXT_DAY", 10);
+            addChoice("เหนื่อยไหม? 🥤", 3, 0, "NEXT_DAY", 8);
+            addChoice("ช้ากว่านี้ได้ไหม 😫", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("ICE_D2_B")) {
             currentScene = new Dialogue("เธอวิ่งไปมองคุณไป...");
-            addChoice("ส่งน้ำให้ 🥤", 5, 0, "NEXT_DAY");
-            addChoice("เล่นมือถือ 📱", -5, 0, "NEXT_DAY");
-            addChoice("ตะโกนแซว 📣", 3, 0, "NEXT_DAY");
+            addChoice("ส่งน้ำให้ 🥤", 5, 0, "NEXT_DAY", 8);
+            addChoice("เล่นมือถือ 📱", -5, 0, "NEXT_DAY", 3);
+            addChoice("ตะโกนแซว 📣", 3, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("ICE_D2_C")) {
             currentScene = new Dialogue("เธอวิ่งต่อโดยไม่สนใจ...");
-            addChoice("เดินตาม 🚶", 3, 0, "NEXT_DAY");
-            addChoice("กลับก่อน 👋", -5, 0, "NEXT_DAY");
-            addChoice("ตะโกนบ่น 😫", -10, 0, "NEXT_DAY");
+            addChoice("เดินตาม 🚶", 3, 0, "NEXT_DAY", 5);
+            addChoice("กลับก่อน 👋", -5, 0, "NEXT_DAY", 3);
+            addChoice("ตะโกนบ่น 😫", -10, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runIceDay3() {
+        setBackgroundImage("/com/jibgirl/asset/clubroom.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 3: โปรเจกต์เรียน --- 📚\nไอซ์: \"ช่วยดูแบบแปลนหน่อย\"");
-            addChoice("วิเคราะห์จริงจัง 📐", 10, 0, "ICE_D3_A");
-            addChoice("ฟังเฉย ๆ 🎧", 0, 0, "ICE_D3_B");
-            addChoice("บอกว่ายากเกิน 😫", -5, 0, "ICE_D3_C");
+            currentScene = new Dialogue("--- DAY 3: ห้องชมรม --- 🏀\nไอซ์: \"มาแข่งบาสกับฉันเถอะ!\"");
+            addChoice("งั้นเริ่มเลย! 🏀🔥", 10, 0, "ICE_D3_A", 20);
+            addChoice("ออมมือให้ 😜", 3, 0, "ICE_D3_B", 15);
+            addChoice("ไม่เอา ขี้เกียจ 🙄", -5, 0, "ICE_D3_C", 3);
         } else if (gameState.equals("ICE_D3_A")) {
-            currentScene = new Dialogue("เธอเริ่มพึ่งคุณมากขึ้น...");
-            addChoice("อยู่ช่วยจนเสร็จ ✨", 10, 0, "NEXT_DAY");
-            addChoice("ช่วยบางส่วน 👍", 3, 0, "NEXT_DAY");
-            addChoice("บ่นว่าเสียเวลา 🙄", -5, 0, "NEXT_DAY");
+            currentScene = new Dialogue("แข่งกันเหงื่อซึม เธอสนุกมาก!");
+            addChoice("อยู่ช่วยจนเสร็จ ✨", 10, 0, "NEXT_DAY", 20);
+            addChoice("ช่วยบางส่วน 👍", 3, 0, "NEXT_DAY", 10);
+            addChoice("บ่นว่าเสียเวลา 🙄", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("ICE_D3_B")) {
             currentScene = new Dialogue("บรรยากาศค่อนข้างเงียบ...");
-            addChoice("ถามเพิ่ม? ❓", 5, 0, "NEXT_DAY");
-            addChoice("เงียบต่อไป... 🤐", -3, 0, "NEXT_DAY");
-            addChoice("เปลี่ยนเรื่อง 💬", -5, 0, "NEXT_DAY");
+            addChoice("ถามเพิ่ม? ❓", 5, 0, "NEXT_DAY", 5);
+            addChoice("เงียบต่อไป... 🤐", -3, 0, "NEXT_DAY", 3);
+            addChoice("เปลี่ยนเรื่อง 💬", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("ICE_D3_C")) {
             currentScene = new Dialogue("เธอขมวดคิ้วเล็กน้อย...");
-            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ยืนยันไม่ช่วย 🙅", -10, 0, "NEXT_DAY");
-            addChoice("ลุกออก 👋", -10, 0, "NEXT_DAY");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("ยืนยันไม่ช่วย 🙅", -10, 0, "NEXT_DAY", 5);
+            addChoice("ลุกออก 👋", -10, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runIceDay4() {
+        setBackgroundImage("/com/jibgirl/asset/cafe.png");
         if (gameState.equals("START")) {
             currentScene = new Dialogue(
-                    "--- DAY 4: คาเฟ่เงียบ --- ☕\nไอซ์: \"บางทีฉันก็เหนื่อยนะ ที่ต้องเก่งตลอด...\"");
-            addChoice("เธอไม่ต้องเก่งตลอดก็ได้ ✨", 10, 0, "ICE_D4_A");
-            addChoice("ก็เธอเลือกเอง 🙄", -5, 0, "ICE_D4_B");
-            addChoice("เงียบฟัง 🎧", 3, 0, "ICE_D4_C");
+                    "--- DAY 4: คาเฟ่ --- ☕\nไอซ์: \"บางทีฉันก็เหนื่อยนะ ที่ต้องเก่งตลอด...\"");
+            addChoice("เธอไม่ต้องเก่งตลอดก็ได้ ✨", 10, 0, "ICE_D4_A", 5);
+            addChoice("ก็เธอเลือกเอง 🙄", -5, 0, "ICE_D4_B", 5);
+            addChoice("เงียบฟัง 🎧", 3, 0, "ICE_D4_C", 5);
         } else if (gameState.equals("ICE_D4_A")) {
             currentScene = new Dialogue("เธอมองคุณนานขึ้น...");
-            addChoice("ฉันอยากเป็นที่พักให้เธอ 💖", 10, 0, "NEXT_DAY");
-            addChoice("ยิ้มให้ 😊", 3, 0, "NEXT_DAY");
-            addChoice("หัวเราะกลบ 😅", -5, 0, "NEXT_DAY");
+            addChoice("ฉันอยากเป็นที่พักให้เธอ 💖", 10, 0, "NEXT_DAY", 8);
+            addChoice("ยิ้มให้ 😊", 3, 0, "NEXT_DAY", 5);
+            addChoice("หัวเราะกลบ 😅", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("ICE_D4_B")) {
             currentScene = new Dialogue("ไอซ์ดูจะผิดหวังเล็กน้อย...");
-            addChoice("แก้คำพูด 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY");
-            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY");
+            addChoice("แก้คำพูด 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY", 5);
+            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("ICE_D4_C")) {
             currentScene = new Dialogue("บรรยากาศอ่อนโยนขึ้น...");
-            addChoice("จับมือเธอ 🤝💖", 10, 0, "NEXT_DAY");
-            addChoice("บอกว่าเข้าใจนะ ✨", 3, 0, "NEXT_DAY");
-            addChoice("ล้อเล่นนิดหน่อย 😋", -5, 0, "NEXT_DAY");
+            addChoice("จับมือเธอ 🤝💖", 10, 0, "NEXT_DAY", 8);
+            addChoice("บอกว่าเข้าใจนะ ✨", 3, 0, "NEXT_DAY", 5);
+            addChoice("ล้อเล่นนิดหน่อย 😋", -5, 0, "NEXT_DAY", 5);
         }
         updateUI();
     }
 
     private void runIceDay5() {
+        setBackgroundImage("/com/jibgirl/asset/basketball.png");
         if (gameState.equals("START")) {
             currentScene = new Dialogue(
-                    "--- DAY 5: สารภาพ --- 🏀💖\n'เซนต์': \"ฉันไม่ได้อยากชนะเกม แต่อยากอยู่ข้างเธอ\"");
-            addChoice("จริงจังลึกซึ้ง 💎💖", 10, 0, "FINAL");
-            addChoice("พูดแบบเขิน ๆ 😳💓", 3, 0, "FINAL");
-            addChoice("พูดท้าทาย 🔥", -5, 0, "FINAL");
+                    "--- DAY 5: สนามบาสเกตบอล --- 🏀💖\n'เซนต์': \"ฉันอยากอยู่ข้างเธอเสมอ ไม่ว่าผลจะเป็นยังไง\"");
+            // [FIX] Set stamina cost to 0 for Day 5 to prevent button disabling
+            addChoice("จริงจังลึกซึ้ง 💎💖", 10, 0, "FINAL", 0);
+            addChoice("พูดแบบเขิน ๆ 😳💓", 3, 0, "FINAL", 0);
+            addChoice("พูดท้าทาย 🔥", -5, 0, "FINAL", 0);
         }
         updateUI();
     }
@@ -542,111 +724,118 @@ public class GameGui extends JFrame {
     // ======================
 
     private void runKanomDay1() {
+        setBackgroundImage("/com/jibgirl/asset/artroom.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 1: คาเฟ่ --- 📸\nขนม: \"ช่วยถ่ายรูปให้หน่อย!\"");
-            addChoice("ถ่ายสวยมาก ✨", 10, 0, "KANOM_D1_A");
-            addChoice("ธรรมดา 😐", 3, 0, "KANOM_D1_B");
-            addChoice("ถ่ายพลาด 😅", -5, 0, "KANOM_D1_C");
+            currentScene = new Dialogue("--- DAY 1: ห้องศิลปะ --- 🖌️\nขนม: \"ช่วยระบายสีตรงนี้หน่อยสิ!\"");
+            addChoice("ระบายสวยมาก ✨", 10, 0, "KANOM_D1_A", 10);
+            addChoice("เละเทะไปหน่อย 😅", 3, 0, "KANOM_D1_B", 8);
+            addChoice("ไม่ช่วยขี้เกียจ 🙄", -5, 0, "KANOM_D1_C", 5);
         } else if (gameState.equals("KANOM_D1_A")) {
-            currentScene = new Dialogue("ขนม: \"ว้าว นายถ่ายเก่ง!\"");
-            addChoice("เพราะคนในรูปน่ารัก ✨", 10, 0, "NEXT_DAY");
-            addChoice("ก็พอได้ 👍", 3, 0, "NEXT_DAY");
-            addChoice("กล้องดี 📸", -5, 0, "NEXT_DAY");
+            currentScene = new Dialogue("ขนม: \"ว้าว นายก็มีฝีมือนี่นา!\"");
+            addChoice("เพราะคนในรูปน่ารัก ✨", 10, 0, "NEXT_DAY", 5);
+            addChoice("ก็พอได้ 👍", 3, 0, "NEXT_DAY", 5);
+            addChoice("กล้องดี 📸", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("KANOM_D1_B")) {
             currentScene = new Dialogue("ขนมพยักหน้าเบา ๆ...");
-            addChoice("ชมเพิ่ม ✨", 5, 0, "NEXT_DAY");
-            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY");
-            addChoice("แซวแรง 😜", -5, 0, "NEXT_DAY");
+            addChoice("ชมเพิ่ม ✨", 5, 0, "NEXT_DAY", 5);
+            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY", 3);
+            addChoice("แซวแรง 😜", -5, 0, "NEXT_DAY", 3);
         } else if (gameState.equals("KANOM_D1_C")) {
             currentScene = new Dialogue("ขนมทำหน้ามุ่ยเล็กน้อย...");
-            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("โทษเธอ 🙄", -10, 0, "NEXT_DAY");
-            addChoice("หัวเราะใส่ 😂", -5, 0, "NEXT_DAY");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("โทษเธอ 🙄", -10, 0, "NEXT_DAY", 3);
+            addChoice("หัวเราะใส่ 😂", -5, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runKanomDay2() {
+        setBackgroundImage("/com/jibgirl/asset/classroom.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 2: วางแผนเที่ยว --- 🏖️\nขนม: \"อยากไปทะเล!\"");
-            addChoice("เสนอแผนจริงจัง 🗺️✨", 10, 0, "KANOM_D2_A");
-            addChoice("ฟังเฉย ๆ 🎧", 3, 0, "KANOM_D2_B");
-            addChoice("บอกเปลืองเงิน 💸", -5, 0, "KANOM_D2_C");
+            currentScene = new Dialogue("--- DAY 2: ห้องเรียน --- 📚\nขนม: \"ทำการบ้านให้เราหน่อยน้าาาา!\"");
+            addChoice("ทำให้สิครับ ✨", 10, 0, "KANOM_D2_A", 15);
+            addChoice("สอนให้ทำเองดีกว่า 👍", 5, 0, "KANOM_D2_A", 10);
+            addChoice("ไม่ทำ! 🙄", -5, 0, "KANOM_D2_C", 3);
         } else if (gameState.equals("KANOM_D2_A")) {
-            currentScene = new Dialogue("ขนมตาเป็นประกาย...");
-            addChoice("อาสาไปด้วย 🚗💨", 10, 0, "NEXT_DAY");
-            addChoice("ช่วยวางแผน ✨", 5, 0, "NEXT_DAY");
-            addChoice("เปลี่ยนใจ 😶", -5, 0, "NEXT_DAY");
+            currentScene = new Dialogue("ขนมซาบซึ้งใจสุด ๆ พยายามตั้งใจเรียนไปพร้อมกับคุณ...");
+            addChoice("อาสาไปด้วย 🚗💨", 10, 0, "NEXT_DAY", 20);
+            addChoice("ช่วยวางแผน ✨", 5, 0, "NEXT_DAY", 10);
+            addChoice("เปลี่ยนใจ 😶", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("KANOM_D2_B")) {
             currentScene = new Dialogue("ขนมเล่าแผนของเธอต่อ...");
-            addChoice("ชมไอเดีย 👍", 3, 0, "NEXT_DAY");
-            addChoice("เล่นมือถือ 📱", -5, 0, "NEXT_DAY");
-            addChoice("ล้อเล่น 😋", 0, 0, "NEXT_DAY");
+            addChoice("ชมไอเดีย 👍", 3, 0, "NEXT_DAY", 5);
+            addChoice("เล่นมือถือ 📱", -5, 0, "NEXT_DAY", 3);
+            addChoice("ล้อเล่น 😋", 0, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("KANOM_D2_C")) {
             currentScene = new Dialogue("ขนมเงียบไป...");
-            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY");
-            addChoice("เดินหนี 🚶", -10, 0, "NEXT_DAY");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY", 3);
+            addChoice("เดินหนี 🚶", -10, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runKanomDay3() {
+        setBackgroundImage("/com/jibgirl/asset/clubroom.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 3: สวนสาธารณะ --- 🏞️\nขนมเครียดยอดวิวตก...");
-            addChoice("ยอดไม่สำคัญเท่าความสุข ✨", 10, 0, "KANOM_D3_A");
-            addChoice("เดี๋ยวก็ดีขึ้น 👍", 3, 0, "KANOM_D3_B");
-            addChoice("ต้องพยายามมากกว่านี้ 🔥", -5, 0, "KANOM_D3_C");
+            currentScene = new Dialogue("--- DAY 3: ห้องชมรม --- 🎒\nขนม: \"ไปหาของกินในตู้เย็นชมรมกัน!\"");
+            addChoice("เอาสิ! หิวพอดี 🌭", 10, 0, "KANOM_D3_A", 5);
+            addChoice("เดี๋ยวโดนว่านะ 🤐", 3, 0, "KANOM_D3_B", 5);
+            addChoice("ไม่ไป 🙄", -5, 0, "KANOM_D3_C", 3);
         } else if (gameState.equals("KANOM_D3_A")) {
-            currentScene = new Dialogue("เธอดูผ่อนคลายลง...");
-            addChoice("อยู่ปลอบจนยิ้ม 😊💖", 10, 0, "NEXT_DAY");
-            addChoice("เล่าเรื่องขำ ๆ 😂", 3, 0, "NEXT_DAY");
-            addChoice("รีบกลับ 👋", -5, 0, "NEXT_DAY");
+            currentScene = new Dialogue("เราแอบกินขนมด้วยกันอย่างสนุกสนาน...");
+            addChoice("อยู่ปลอบจนยิ้ม 😊💖", 10, 0, "NEXT_DAY", 8);
+            addChoice("เล่าเรื่องขำ ๆ 😂", 3, 0, "NEXT_DAY", 8);
+            addChoice("รีบกลับ 👋", -5, 0, "NEXT_DAY", 3);
         } else if (gameState.equals("KANOM_D3_B")) {
             currentScene = new Dialogue("เธอยังดูไม่ค่อยสบายใจนัก...");
-            addChoice("ช่วยคิดคอนเทนต์ 💡", 5, 0, "NEXT_DAY");
-            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY");
-            addChoice("เปลี่ยนเรื่อง 💬", -5, 0, "NEXT_DAY");
+            addChoice("ช่วยคิดคอนเทนต์ 💡", 5, 0, "NEXT_DAY", 10);
+            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY", 3);
+            addChoice("เปลี่ยนเรื่อง 💬", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("KANOM_D3_C")) {
             currentScene = new Dialogue("ขนมหน้าเครียดกว่าเดิม...");
-            addChoice("แก้คำพูด 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ย้ำคำเดิม 🤐", -10, 0, "NEXT_DAY");
-            addChoice("ล้อแรง 😜", -10, 0, "NEXT_DAY");
+            addChoice("แก้คำพูด 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("ย้ำคำเดิม 🤐", -10, 0, "NEXT_DAY", 3);
+            addChoice("ล้อแรง 😜", -10, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runKanomDay4() {
+        setBackgroundImage("/com/jibgirl/asset/cafe.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 4: สวนสาธารณะ --- 🌳\nขนม: \"อยู่กับนายแล้วสบายใจนะ\"");
-            addChoice("ฉันก็เหมือนกัน ✨", 10, 0, "KANOM_D4_A");
-            addChoice("ก็ดี 👍", 3, 0, "KANOM_D4_B");
-            addChoice("ก็ปกติ 😐", -5, 0, "KANOM_D4_C");
+            currentScene = new Dialogue(
+                    "--- DAY 4: คาเฟ่ --- 🍰\nขนม: \"สตรอว์เบอร์รี่โทสต์ร้านนี้อร่อยมากเลย ลองกินดูสิ!\"");
+            addChoice("ป้อนหน่อยสิครับ ✨😳", 10, 0, "KANOM_D4_A", 5);
+            addChoice("กินเองก็ได้ 🍴", 3, 0, "KANOM_D4_B", 5);
+            addChoice("ปกติ 😐", -5, 0, "KANOM_D4_C", 5);
         } else if (gameState.equals("KANOM_D4_A")) {
-            currentScene = new Dialogue("บรรยากาศเป็นใจสุด ๆ...");
-            addChoice("จับมือ 🤝💖", 10, 0, "NEXT_DAY");
-            addChoice("ยิ้มเขิน 😊😳", 3, 0, "NEXT_DAY");
-            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY");
+            currentScene = new Dialogue("ขนมหน้าแดงจัด... \"อึ๋ย... ก็ได้ ก้ากกกก\"");
+            addChoice("จับมือ 🤝💖", 10, 0, "NEXT_DAY", 8);
+            addChoice("ยิ้มเขิน 😊😳", 3, 0, "NEXT_DAY", 5);
+            addChoice("เปลี่ยนเรื่อง 😶", -5, 0, "NEXT_DAY", 5);
         } else if (gameState.equals("KANOM_D4_B")) {
             currentScene = new Dialogue("ขนมยิ้มกว้าง...");
-            addChoice("พูดเพิ่ม ✨", 5, 0, "NEXT_DAY");
-            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY");
-            addChoice("แซวแรง 😜", -5, 0, "NEXT_DAY");
+            addChoice("พูดเพิ่ม ✨", 5, 0, "NEXT_DAY", 5);
+            addChoice("เงียบ 🤐", -3, 0, "NEXT_DAY", 3);
+            addChoice("แซวแรง 😜", -5, 0, "NEXT_DAY", 3);
         } else if (gameState.equals("KANOM_D4_C")) {
             currentScene = new Dialogue("เธอดูเศร้าลงเล็กน้อย...");
-            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY");
-            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY");
-            addChoice("หัวเราะใส่ 😂", -5, 0, "NEXT_DAY");
+            addChoice("ขอโทษ 🥺", 3, 0, "NEXT_DAY", 8);
+            addChoice("ยืนยันคำเดิม 🤐", -10, 0, "NEXT_DAY", 3);
+            addChoice("หัวเราะใส่ 😂", -5, 0, "NEXT_DAY", 3);
         }
         updateUI();
     }
 
     private void runKanomDay5() {
+        setBackgroundImage("/com/jibgirl/asset/basketball.png");
         if (gameState.equals("START")) {
-            currentScene = new Dialogue("--- DAY 5: สารภาพ --- 💖✨\n'เซนต์': \"ทุกวันที่อยู่กับเธอ มันสนุกจริง ๆ\"");
-            addChoice("พูดตรง ๆ 💎💖", 10, 0, "FINAL");
-            addChoice("พูดเขิน ๆ 😳💓", 3, 0, "FINAL");
-            addChoice("พูดเล่น 🍬", -5, 0, "FINAL");
+            currentScene = new Dialogue(
+                    "--- DAY 5: สนามบาสเกตบอล --- 🏀✨\n'เซนต์': \"วันนี้มันเป็นวันที่ดีที่สุดเลย เพราะได้อยู่กับเธอ\"");
+            addChoice("พูดตรง ๆ 💎💖", 10, 0, "FINAL", 0);
+            addChoice("พูดเขิน ๆ 😳💓", 3, 0, "FINAL", 0);
+            addChoice("พูดเล่น 🍬", -5, 0, "FINAL", 0);
         }
         updateUI();
     }
@@ -655,18 +844,47 @@ public class GameGui extends JFrame {
         dayLabel.setText("DAY " + day);
         moneyLabel.setText("💰 " + String.format("%,d", player.getMoney()));
         affectionBar.setValue(player.getAffection());
+
+        // Update stamina bar with warning colors
+        staminaBar.setValue(staminaManager.getStamina());
+
+        // Color is handled by setStamina(true) and NeonProgressBar gradient
+
         dialogueArea.setText(currentScene.getQuestion());
     }
 
     private class BackgroundPanel extends JPanel {
         private Image backgroundImage;
+        private Image characterImage;
 
         public BackgroundPanel(String fileName) {
+            setBackgroundImage(fileName);
+        }
+
+        public void setBackgroundImage(String fileName) {
             try {
                 java.net.URL imgURL = getClass().getResource(fileName);
-                if (imgURL != null)
+                if (imgURL != null) {
                     backgroundImage = new ImageIcon(imgURL).getImage();
+                    repaint();
+                }
             } catch (Exception e) {
+            }
+        }
+
+        public void setCharacterImage(String fileName) {
+            try {
+                java.net.URL imgURL = getClass().getResource(fileName);
+                if (imgURL != null) {
+                    characterImage = new ImageIcon(imgURL).getImage();
+                    repaint();
+                } else {
+                    characterImage = null;
+                    repaint();
+                }
+            } catch (Exception e) {
+                characterImage = null;
+                repaint();
             }
         }
 
@@ -677,6 +895,15 @@ public class GameGui extends JFrame {
                 g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
                 g.setColor(new Color(255, 255, 255, 40));
                 g.fillRect(0, 0, getWidth(), getHeight());
+            }
+
+            if (characterImage != null) {
+                // Draw character centered at the bottom
+                int charWidth = 450; // Larger for gameplay
+                int charHeight = 630;
+                int x = (getWidth() - charWidth) / 2;
+                int y = getHeight() - charHeight + 50; // Slightly lower
+                g.drawImage(characterImage, x, y, charWidth, charHeight, this);
             }
         }
     }
