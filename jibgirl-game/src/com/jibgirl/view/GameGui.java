@@ -9,6 +9,10 @@ import com.jibgirl.model.Choice;
 import com.jibgirl.model.Dialogue;
 import com.jibgirl.model.Player;
 import com.jibgirl.model.Scene;
+import java.util.Map;
+import com.jibgirl.network.GameClient;
+import com.jibgirl.network.GameServer;
+import com.jibgirl.network.GameServer.PlayerState;
 import com.jibgirl.utils.UIUtils;
 import com.jibgirl.utils.UIUtils.ModernPanel;
 import com.jibgirl.utils.UIUtils.NeonProgressBar;
@@ -18,6 +22,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class GameGui extends JFrame {
+
+    private GameClient client;
+    private boolean isMultiplayer = false;
+    private JPanel multiplayerPanel;
 
     private Player player;
     private Dialogue currentScene;
@@ -40,14 +48,24 @@ public class GameGui extends JFrame {
     private static final Font DIALOG_FONT = new Font("Tahoma", Font.BOLD, 22);
 
     public GameGui(String characterKey) {
+        this(characterKey, null);
+    }
+
+    public GameGui(GameClient client) {
+        this(client.getAllPlayers().get(client.getMyId()).character, client);
+    }
+
+    private GameGui(String characterKey, GameClient client) {
         this.characterKey = characterKey;
+        this.client = client;
+        this.isMultiplayer = (client != null);
         this.player = new Player("เซนต์", 1000);
         this.manager = new ChoiceManager();
         this.staminaManager = new StaminaManager();
         this.inventory = new Inventory();
 
-        setTitle("💖 Jib Girl Game - Cute Edition 💖");
-        setSize(1200, 900);
+        setTitle("💖 Jib Girl Game - " + (isMultiplayer ? "Multiplayer" : "Cute Edition") + " 💖");
+        setSize(isMultiplayer ? 1300 : 1200, 900); // Slightly wider for multiplayer panel
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -55,6 +73,11 @@ public class GameGui extends JFrame {
         BackgroundPanel bgPanel = new BackgroundPanel("/com/jibgirl/asset/bg.jpg");
         setContentPane(bgPanel);
         getContentPane().setLayout(new BorderLayout());
+
+        if (isMultiplayer) {
+            setupMultiplayerPanel();
+            client.setOnSyncListener(this::updateMultiplayerStatus);
+        }
 
         // ======================
         // NORTH PANEL (Header)
@@ -212,6 +235,60 @@ public class GameGui extends JFrame {
         if (getContentPane() instanceof BackgroundPanel) {
             ((BackgroundPanel) getContentPane()).setCharacterImage(fileName);
         }
+    }
+
+    private void setupMultiplayerPanel() {
+        multiplayerPanel = new JPanel();
+        multiplayerPanel.setLayout(new BoxLayout(multiplayerPanel, BoxLayout.Y_AXIS));
+        multiplayerPanel.setOpaque(false);
+        multiplayerPanel.setPreferredSize(new Dimension(200, 0));
+        multiplayerPanel.setBorder(new EmptyBorder(20, 10, 20, 10));
+
+        JLabel title = new JLabel("🌍 World Status", SwingConstants.CENTER);
+        title.setFont(new Font("Tahoma", Font.BOLD, 16));
+        title.setForeground(Color.WHITE);
+        multiplayerPanel.add(title);
+        multiplayerPanel.add(Box.createVerticalStrut(10));
+
+        getContentPane().add(multiplayerPanel, BorderLayout.WEST);
+    }
+
+    private void updateMultiplayerStatus(Map<Integer, GameServer.PlayerState> players) {
+        SwingUtilities.invokeLater(() -> {
+            multiplayerPanel.removeAll();
+            JLabel title = new JLabel("🌍 World Status", SwingConstants.CENTER);
+            title.setFont(new Font("Tahoma", Font.BOLD, 16));
+            title.setForeground(Color.WHITE);
+            multiplayerPanel.add(title);
+            multiplayerPanel.add(Box.createVerticalStrut(10));
+
+            for (GameServer.PlayerState p : players.values()) {
+                if (client != null && p.id == client.getMyId())
+                    continue;
+
+                ModernPanel pPanel = new ModernPanel(15);
+                pPanel.setBackground(new Color(255, 255, 255, 150));
+                pPanel.setLayout(new GridLayout(3, 1));
+                pPanel.setPreferredSize(new Dimension(180, 80));
+                pPanel.setMaximumSize(new Dimension(180, 80));
+
+                JLabel name = new JLabel("👤 " + p.name);
+                name.setFont(new Font("Tahoma", Font.BOLD, 12));
+                JLabel charInfo = new JLabel("💕 " + p.character);
+                charInfo.setFont(new Font("Tahoma", Font.PLAIN, 11));
+                JLabel progress = new JLabel("📅 Day " + p.day + " | ❤️ " + p.affection);
+                progress.setFont(new Font("Tahoma", Font.PLAIN, 11));
+
+                pPanel.add(name);
+                pPanel.add(charInfo);
+                pPanel.add(progress);
+
+                multiplayerPanel.add(pPanel);
+                multiplayerPanel.add(Box.createVerticalStrut(5));
+            }
+            multiplayerPanel.revalidate();
+            multiplayerPanel.repaint();
+        });
     }
 
     public void refreshStatus() {
@@ -841,16 +918,22 @@ public class GameGui extends JFrame {
     }
 
     private void updateUI() {
-        dayLabel.setText("DAY " + day);
-        moneyLabel.setText("💰 " + String.format("%,d", player.getMoney()));
-        affectionBar.setValue(player.getAffection());
+        if (dayLabel != null)
+            dayLabel.setText("DAY " + day);
+        if (moneyLabel != null)
+            moneyLabel.setText("💰 " + String.format("%,d", player.getMoney()));
+        if (affectionBar != null)
+            affectionBar.setValue(player.getAffection());
+        if (staminaBar != null)
+            staminaBar.setValue(staminaManager.getStamina());
 
-        // Update stamina bar with warning colors
-        staminaBar.setValue(staminaManager.getStamina());
+        if (dialogueArea != null && currentScene != null) {
+            dialogueArea.setText(currentScene.getQuestion());
+        }
 
-        // Color is handled by setStamina(true) and NeonProgressBar gradient
-
-        dialogueArea.setText(currentScene.getQuestion());
+        if (isMultiplayer && client != null) {
+            client.updateProgress(day, player.getAffection());
+        }
     }
 
     private class BackgroundPanel extends JPanel {
