@@ -21,6 +21,7 @@ public class UIUtils {
     public static final Color PASTEL_MINT = new Color(191, 252, 198);
     public static final Color PASTEL_PEACH = new Color(255, 223, 186);
     public static final Color PASTEL_BLUE = new Color(174, 198, 255);
+    public static final Color PASTEL_YELLOW = new Color(255, 245, 157);
     public static final Color BORDER_SOFT = new Color(255, 255, 255, 150);
 
     public static class ModernPanel extends JPanel {
@@ -182,6 +183,7 @@ public class UIUtils {
 
     public static class NeonProgressBar extends JProgressBar {
         private boolean isCute = false;
+        private boolean isStamina = false;
 
         public NeonProgressBar() {
             setOpaque(false);
@@ -196,6 +198,13 @@ public class UIUtils {
                 setForeground(PASTEL_PINK);
             } else {
                 setForeground(ACCENT_NEON);
+            }
+        }
+
+        public void setStamina(boolean stamina) {
+            this.isStamina = stamina;
+            if (stamina) {
+                setForeground(PASTEL_YELLOW);
             }
         }
 
@@ -217,6 +226,8 @@ public class UIUtils {
             Paint paint;
             if (isCute) {
                 paint = new GradientPaint(0, 0, PASTEL_PINK, progressWidth, 0, PASTEL_PURPLE);
+            } else if (isStamina) {
+                paint = new GradientPaint(0, 0, PASTEL_YELLOW, progressWidth, 0, new Color(255, 200, 100));
             } else {
                 paint = new GradientPaint(0, 0, TEAL_LIGHT, progressWidth, 0, ACCENT_NEON);
             }
@@ -225,11 +236,28 @@ public class UIUtils {
 
             // Glow / Border
             g2.setColor(new Color(255, 255, 255, 100));
-            if (!isCute) {
+            if (isStamina) {
+                g2.setColor(new Color(PASTEL_YELLOW.getRed(), PASTEL_YELLOW.getGreen(), PASTEL_YELLOW.getBlue(), 120));
+            } else if (!isCute) {
                 g2.setColor(new Color(ACCENT_NEON.getRed(), ACCENT_NEON.getGreen(), ACCENT_NEON.getBlue(), 100));
             }
             g2.setStroke(new BasicStroke(3f));
-            g2.draw(new RoundRectangle2D.Double(1, 1, progressWidth - 2, height - 2, height, height));
+            g2.draw(new RoundRectangle2D.Double(1, 1, width - 2, height - 2, height, height));
+
+            // Percentage Text
+            String text = getValue() + "%";
+            g2.setFont(new Font("Inter", Font.BOLD, 12));
+            FontMetrics metrics = g2.getFontMetrics();
+            int tx = (width - metrics.stringWidth(text)) / 2;
+            int ty = ((height - metrics.getHeight()) / 2) + metrics.getAscent();
+
+            // Text Shadow
+            g2.setColor(new Color(0, 0, 0, 100));
+            g2.drawString(text, tx + 1, ty + 1);
+
+            // Text Color
+            g2.setColor(Color.WHITE);
+            g2.drawString(text, tx, ty);
 
             g2.dispose();
         }

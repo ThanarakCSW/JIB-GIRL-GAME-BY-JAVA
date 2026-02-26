@@ -3,8 +3,7 @@ package com.jibgirl.view;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import com.jibgirl.utils.UIUtils.*;
-import com.jibgirl.utils.UIUtils;
+import static com.jibgirl.utils.UIUtils.*;
 
 public class CharacterSelectionScreen extends JFrame {
 
@@ -48,16 +47,20 @@ public class CharacterSelectionScreen extends JFrame {
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         nameLabel.setBorder(new EmptyBorder(30, 0, 20, 0));
 
-        // Image Placeholder (Pinkish box)
-        ModernPanel imagePlaceholder = new ModernPanel(20);
-        imagePlaceholder.setBackground(UIUtils.PASTEL_PINK);
-        imagePlaceholder.setPreferredSize(new Dimension(200, 280));
-        imagePlaceholder.setMaximumSize(new Dimension(200, 280));
-        JLabel placeholderIcon = new JLabel("👑");
-        placeholderIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
-        placeholderIcon.setForeground(new Color(255, 255, 255, 180));
-        imagePlaceholder.add(placeholderIcon);
-        imagePlaceholder.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Character Sprite instead of Placeholder
+        String spritePath = "/com/jibgirl/asset/" + charKey.toLowerCase() + "_normal.png";
+
+        JLabel characterSprite = new JLabel();
+        try {
+            java.net.URL imgURL = getClass().getResource(spritePath);
+            if (imgURL != null) {
+                ImageIcon icon = new ImageIcon(imgURL);
+                Image img = icon.getImage().getScaledInstance(200, 280, Image.SCALE_SMOOTH);
+                characterSprite.setIcon(new ImageIcon(img));
+            }
+        } catch (Exception e) {
+        }
+        characterSprite.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         PremiumButton selectButton = new PremiumButton("เลือกคนนี้แหละ! 💞");
         selectButton.setCute(true);
@@ -71,7 +74,7 @@ public class CharacterSelectionScreen extends JFrame {
 
         card.add(nameLabel);
         card.add(Box.createVerticalGlue());
-        card.add(imagePlaceholder);
+        card.add(characterSprite);
         card.add(Box.createVerticalGlue());
         card.add(selectButton);
         card.add(Box.createVerticalStrut(30));

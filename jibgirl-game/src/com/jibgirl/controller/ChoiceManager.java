@@ -5,27 +5,56 @@ import com.jibgirl.model.Player;
 
 public class ChoiceManager {
 
-    public void selectChoice(Player player, Choice choice) {
+    /**
+     * Select a choice and apply its effects to the player
+     * Checks both money and stamina requirements
+     * 
+     * @param player         the player making the choice
+     * @param choice         the selected choice
+     * @param staminaManager the stamina manager for this player
+     * @return true if choice was successfully executed, false otherwise
+     */
+    public boolean selectChoice(Player player, Choice choice, StaminaManager staminaManager) {
         System.out.println(">> ผู้เล่นเลือก: " + choice.getText());
 
-        // --- แก้ไขตรงนี้ครับ (ใช้ spendMoney แบบใหม่) ---
-        
-        // เราใช้ if เพื่อถาม Player ว่า "มีเงินจ่ายไหม?"
-        // ถ้าจ่ายได้ (True) -> จะหักเงินให้เลย แล้วทำข้างในปีกกา
-        if (player.spendMoney(choice.getCost())) {
-            
-            // 1. จ่ายเงินสำเร็จ -> เพิ่มความรัก
-            player.addAffection(choice.getAffectionImpact());
-            
-            // 2. แสดงผลลัพธ์
-            System.out.println("Result: " + choice.getReaction());
-            
-        } else {
-            // จ่ายเงินไม่สำเร็จ (False) -> เงินไม่พอ
+        // 1. ตรวจสอบเงินก่อน
+        if (!player.canSpendMoney(choice.getCost())) {
             System.out.println("❌ เงินไม่พอครับ! (ขาดอีก " + (choice.getCost() - player.getMoney()) + " บาท)");
             System.out.println("Result: คุณไม่ได้ทำอะไรเลย เพราะไม่มีตังค์...");
+            System.out.println("------------------------------------------------");
+            return false;
         }
-        
+
+        // 2. ตรวจสอบสมดุลชีวิตก่อน
+        if (!staminaManager.hasEnoughStamina(choice.getStaminaCost())) {
+            System.out.println("❌ สมดุลชีวิตไม่พอครับ! (มี: " + staminaManager.getStamina() +
+                    " ต้องการ: " + choice.getStaminaCost() + ")");
+            System.out.println("Result: คุณเหนื่อยเกินไป ไม่สามารถทำได้...");
+            System.out.println("------------------------------------------------");
+            return false;
+        }
+
+        // 3. ทั้งสองอย่างพอ -> หักเงินและสมดุลชีวิต
+        player.spendMoney(choice.getCost());
+        staminaManager.consumeStamina(choice.getStaminaCost());
+
+        // 4. เพิ่มความรัก
+        player.addAffection(choice.getAffectionImpact());
+
+        // 5. แสดงผลลัพธ์
+        System.out.println("Result: " + choice.getReaction());
+        System.out.println("💰 เงิน: " + player.getMoney() + " | 💖 ความรัก: " +
+                player.getAffection() + " | ⚡ สมดุล: " + staminaManager.getStamina());
         System.out.println("------------------------------------------------");
+        return true;
+    }
+
+    /**
+     * Backward compatible method for old code (assumes default stamina manager)
+     */
+    @Deprecated
+    public void selectChoice(Player player, Choice choice) {
+        StaminaManager tempManager = new StaminaManager();
+        selectChoice(player, choice, tempManager);
     }
 }
