@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 
 public class GameServer {
     private static final int PORT = 12345;
-    private static final int MAX_PLAYERS = 3;
+    private static final int MAX_PLAYERS = 2;
     private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
     private final Map<Integer, PlayerState> playerStates = new ConcurrentHashMap<>();
     private int idCounter = 0;
