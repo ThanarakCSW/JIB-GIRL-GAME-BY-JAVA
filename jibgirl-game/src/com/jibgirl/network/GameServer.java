@@ -87,23 +87,47 @@ public class GameServer {
                 String input;
                 while ((input = in.readLine()) != null) {
                     if (input.startsWith("JOIN:")) {
-                        String name = input.substring(5).trim();
-                        // [FIX] Prevent duplicate players with the same name
+                        String originalName = input.substring(5).trim();
+                        String finalName = originalName;
+                        String currentIP = socket.getInetAddress().getHostAddress();
+
+                        // [FIX] Smart duplicate handling
+                        boolean nameConflict = false;
                         for (ClientHandler ch : clients) {
+                            if (ch == this)
+                                continue;
                             PlayerState ps = playerStates.get(ch.playerId);
-                            if (ps != null && ps.name.equalsIgnoreCase(name) && ch.playerId != playerId) {
-                                System.out.println("⚠️ Duplicate name '" + name
-                                        + "' detected. Disconnecting old Player " + ch.playerId);
-                                ch.sendMessage("ERROR:Name already taken/Reconnecting...");
-                                clients.remove(ch);
-                                playerStates.remove(ch.playerId);
-                                try {
-                                    ch.socket.close();
-                                } catch (IOException e) {
+                            if (ps != null && ps.name.equalsIgnoreCase(originalName)) {
+                                String existingIP = ch.socket.getInetAddress().getHostAddress();
+                                if (existingIP.equals(currentIP)) {
+                                    // Same IP, Same Name: Probably a ghost connection or reconnection
+                                    System.out.println("⚠️ Ghost/Reconnection detected for '" + originalName + "' from "
+                                            + currentIP);
+                                    ch.sendMessage("ERROR:Reconnecting...");
+                                    clients.remove(ch);
+                                    playerStates.remove(ch.playerId);
+                                    try {
+                                        ch.socket.close();
+                                    } catch (IOException e) {
+                                    }
+                                } else {
+                                    // Different IP, Same Name: Real name conflict (e.g., both named "Player")
+                                    nameConflict = true;
                                 }
                             }
                         }
-                        playerStates.put(playerId, new PlayerState(playerId, name));
+
+                        if (nameConflict) {
+                            int suffix = 2;
+                            while (isNameTaken(finalName)) {
+                                finalName = originalName + " (" + suffix + ")";
+                                suffix++;
+                            }
+                            System.out.println("📝 Auto-renaming '" + originalName + "' to '" + finalName
+                                    + "' for new IP: " + currentIP);
+                        }
+
+                        playerStates.put(playerId, new PlayerState(playerId, finalName));
                         broadcastSync();
                     } else if (input.startsWith("SELECT:")) {
                         String character = input.substring(7);
@@ -179,6 +203,13 @@ public class GameServer {
                 out.println(message);
             }
         }
+    }
+
+    private boolean isNameTaken(String name) {
+        for (PlayerState ps : playerStates.values()) {
+            if (ps.name.equalsIgnoreCase(name)) return true;
+        }
+        return false;
     }
 
     public static class PlayerState {
