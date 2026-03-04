@@ -228,9 +228,14 @@ public class GameGui extends JFrame {
      * The characterKey is retrieved from the client's own PlayerState.
      */
     public GameGui(GameClient client) {
-        // derive character key from current player state
-        GameServer.PlayerState ps = client.getAllPlayers().get(client.getMyId());
-        String charKey = ps != null ? ps.character : "None";
+        // [FIX] Use targetCharacter from client (set by host) instead of local player
+        // state
+        String charKey = client.getTargetCharacter();
+        if (charKey == null || charKey.equals("None")) {
+            // Fallback to local state just in case, but targetCharacter should be dominant
+            GameServer.PlayerState ps = client.getAllPlayers().get(client.getMyId());
+            charKey = ps != null ? ps.character : "Maprang"; // Default to Maprang if all else fails
+        }
         // call local constructor to build GUI
         this(charKey);
         // save client reference
@@ -603,7 +608,6 @@ public class GameGui extends JFrame {
                     day++;
                     gameState = "START";
                     isShy = false;
-                    staminaManager.restoreStamina();
                     player.addMoney(100);
                     loadScene();
                 } else {
@@ -612,7 +616,7 @@ public class GameGui extends JFrame {
                     showEnding();
                 }
                 if (client != null) {
-                    client.updateProgress(day, player.getAffection());
+                    client.updateProgress(day, player.getAffection(), staminaManager.getStamina());
                 }
             }));
         }
@@ -625,22 +629,50 @@ public class GameGui extends JFrame {
     }
 
     private void addChoice(String text, int affect, int cost, String nextState, int staminaCost) {
-        Choice c = new Choice(text, affect, cost, "", staminaCost);
+        // [MOD] Fixed stamina costs based on choice order (Skip if cost is explicitly
+        // 0, e.g. Day 5)
+        int fixedStaminaCost;
+        if (staminaCost == 0) {
+            fixedStaminaCost = 0;
+        } else {
+            int choiceIndex = 0;
+            for (Component comp : buttonPanel.getComponents()) {
+                if (comp instanceof JButton) {
+                    choiceIndex++;
+                }
+            }
+
+            switch (choiceIndex) {
+                case 0:
+                    fixedStaminaCost = 20;
+                    break;
+                case 1:
+                    fixedStaminaCost = 15;
+                    break;
+                case 2:
+                    fixedStaminaCost = 10;
+                    break;
+                default:
+                    fixedStaminaCost = 5;
+                    break;
+            }
+        }
+
+        Choice c = new Choice(text, affect, cost, "", fixedStaminaCost);
         PremiumButton btn = new PremiumButton(text);
         btn.setCute(true);
         btn.setPreferredSize(new Dimension(240, 45));
         btn.setMaximumSize(new Dimension(240, 45));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Check if choice is affordable (money and stamina)
-        boolean hasMoneyAndStamina = player.canSpendMoney(cost) &&
-                staminaManager.hasEnoughStamina(staminaCost);
+        // Check if choice is affordable (money only - stamina exhaustion is handled by
+        // logic)
+        boolean hasMoney = player.canSpendMoney(cost);
 
-        // Disable button if not enough resources
-        if (!hasMoneyAndStamina) {
+        // Disable button if not enough money
+        if (!hasMoney) {
             btn.setEnabled(false);
-            btn.setToolTipText((player.canSpendMoney(cost) ? "" : "ไม่มีเงิน | ") +
-                    (staminaManager.hasEnoughStamina(staminaCost) ? "" : "สมดุลชีวิตไม่พอ"));
+            btn.setToolTipText("ไม่มีเงิน");
         }
 
         btn.addActionListener(e -> {
@@ -675,8 +707,7 @@ public class GameGui extends JFrame {
                         day++;
                         gameState = "START";
                         isShy = false; // Always reset shy on new day
-                        // restore stamina and give daily income
-                        staminaManager.restoreStamina();
+                        // give daily income (Stamina NOT restored anymore)
                         player.addMoney(100);
                         System.out.println("🎁 ได้รับรายได้ 100 บาท (เงินตอนนี้: " + player.getMoney() + ")");
                     } else if (nextState.equals("FINAL")) {
@@ -687,7 +718,7 @@ public class GameGui extends JFrame {
                     }
                     loadScene();
                     if (client != null) {
-                        client.updateProgress(day, player.getAffection());
+                        client.updateProgress(day, player.getAffection(), staminaManager.getStamina());
                         startQuestionTimer();
                     }
                 }

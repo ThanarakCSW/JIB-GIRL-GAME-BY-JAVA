@@ -99,9 +99,9 @@ public class GameClient {
         return targetCharacter;
     }
 
-    public void updateProgress(int day, int affection) {
+    public void updateProgress(int day, int affection, int stamina) {
         if (out != null)
-            out.println("UPDATE:" + day + ":" + affection);
+            out.println("UPDATE:" + day + ":" + affection + ":" + stamina);
     }
 
     public void startGame() {

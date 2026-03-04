@@ -106,9 +106,10 @@ public class GameServer {
                     } else if (input.startsWith("UPDATE:")) {
                         String[] parts = input.substring(7).split(":");
                         PlayerState state = playerStates.get(playerId);
-                        if (state != null && parts.length >= 2) {
+                        if (state != null && parts.length >= 3) {
                             state.day = Integer.parseInt(parts[0]);
                             state.affection = Integer.parseInt(parts[1]);
+                            state.stamina = Integer.parseInt(parts[2]);
                             broadcastSync();
                         }
                     } else if (input.equals("START_GAME")) {
@@ -164,6 +165,7 @@ public class GameServer {
         public String character = "None";
         public int day = 1;
         public int affection = 0;
+        public int stamina = 100;
 
         public PlayerState(int id, String name) {
             this.id = id;
@@ -172,7 +174,7 @@ public class GameServer {
 
         @Override
         public String toString() {
-            return id + "," + name + "," + character + "," + day + "," + affection;
+            return id + "," + name + "," + character + "," + day + "," + affection + "," + stamina;
         }
 
         public static PlayerState fromString(String s) {
@@ -181,6 +183,9 @@ public class GameServer {
             state.character = p[2];
             state.day = Integer.parseInt(p[3]);
             state.affection = Integer.parseInt(p[4]);
+            if (p.length >= 6) {
+                state.stamina = Integer.parseInt(p[5]);
+            }
             return state;
         }
     }
