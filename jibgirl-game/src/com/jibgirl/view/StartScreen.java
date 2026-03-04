@@ -31,7 +31,18 @@ public class StartScreen extends JFrame {
             dispose();
         });
 
+        PremiumButton onlineButton = new PremiumButton("โหมดออนไลน์ 💞");
+        onlineButton.setCute(true);
+        onlineButton.setFont(new Font("Tahoma", Font.BOLD, 28));
+        onlineButton.setPreferredSize(new Dimension(400, 80));
+        onlineButton.addActionListener(e -> {
+            new LobbyScreen();
+            dispose();
+        });
+
         bottomPanel.add(startButton);
+        bottomPanel.add(Box.createVerticalStrut(20));
+        bottomPanel.add(onlineButton);
         background.add(bottomPanel, BorderLayout.SOUTH);
 
         setContentPane(background);

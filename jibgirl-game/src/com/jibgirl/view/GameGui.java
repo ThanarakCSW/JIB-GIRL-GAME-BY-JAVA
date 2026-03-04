@@ -9,11 +9,15 @@ import com.jibgirl.model.Choice;
 import com.jibgirl.model.Dialogue;
 import com.jibgirl.model.Player;
 import com.jibgirl.model.Scene;
+import com.jibgirl.network.GameClient;
+import com.jibgirl.network.GameResult;
+import com.jibgirl.network.GameServer;
 import com.jibgirl.utils.UIUtils;
 import com.jibgirl.utils.UIUtils.ModernPanel;
 import com.jibgirl.utils.UIUtils.NeonProgressBar;
 import com.jibgirl.utils.UIUtils.PremiumButton;
 import java.awt.*;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
@@ -23,6 +27,7 @@ public class GameGui extends JFrame {
     private Dialogue currentScene;
     private ChoiceManager manager;
     private StaminaManager staminaManager;
+    private GameClient client; // set when playing in multiplayer
     private Inventory inventory;
     private String characterKey;
     private int day = 1;
@@ -35,11 +40,25 @@ public class GameGui extends JFrame {
     private JTextArea dialogueArea;
     private JPanel buttonPanel;
     private JLabel dayLabel;
+    private JLabel timerLabel;
+    private com.jibgirl.utils.QuestionTimer questionTimer;
+    private int minStaminaRequired = Integer.MAX_VALUE;
+    private PremiumButton endingButton; // Button for online ranking
+    private GameResult myGameResult;
+    private List<GameResult> tournamentResults;
 
     private static final Font MAIN_FONT = new Font("Tahoma", Font.BOLD, 18);
     private static final Font DIALOG_FONT = new Font("Tahoma", Font.BOLD, 22);
 
     public GameGui(String characterKey) {
+        this.client = null;
+        initGui(characterKey);
+        loadScene();
+        startQuestionTimer();
+        setVisible(true);
+    }
+
+    private void initGui(String characterKey) {
         this.characterKey = characterKey;
         // เริ่มต้นเงิน 100 บาทตามระบบรายได้รายวัน
         this.player = new Player("เซนต์", 100);
@@ -64,16 +83,34 @@ public class GameGui extends JFrame {
         northPanel.setOpaque(false);
         northPanel.setBorder(new EmptyBorder(20, 20, 10, 20));
 
-        // Top Header: Relationship Bar (Matches mockup - top center)
-        JPanel topHeader = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        // Top Header: Relationship Bar & Stamina Bar (Stacked in center)
+        JPanel topHeader = new JPanel();
+        topHeader.setLayout(new BoxLayout(topHeader, BoxLayout.Y_AXIS));
         topHeader.setOpaque(false);
+
+        // Affection Bar
         affectionBar = new NeonProgressBar();
         affectionBar.setCute(true);
         affectionBar.setValue(player.getAffection());
         affectionBar.setStringPainted(true);
         affectionBar.setString("Relationship");
         affectionBar.setPreferredSize(new Dimension(800, 30));
+        affectionBar.setMaximumSize(new Dimension(800, 30));
+        affectionBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Stamina Bar
+        staminaBar = new NeonProgressBar();
+        staminaBar.setStamina(true);
+        staminaBar.setValue(staminaManager.getStamina());
+        staminaBar.setStringPainted(true);
+        staminaBar.setString("Stamina");
+        staminaBar.setPreferredSize(new Dimension(800, 30));
+        staminaBar.setMaximumSize(new Dimension(800, 30));
+        staminaBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         topHeader.add(affectionBar);
+        topHeader.add(Box.createVerticalStrut(10));
+        topHeader.add(staminaBar);
         northPanel.add(topHeader, BorderLayout.NORTH);
 
         // Sub-Header: Money (WEST) and Day (EAST)
@@ -103,24 +140,6 @@ public class GameGui extends JFrame {
         leftPanel.add(shopBtn);
         statusHeader.add(leftPanel, BorderLayout.WEST);
 
-        // Center: Stamina Bar
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setOpaque(false);
-        centerPanel.setBorder(new EmptyBorder(0, 20, 0, 20));
-
-        JLabel staminaLabelTop = new JLabel("⚡ Stamina", SwingConstants.CENTER);
-        staminaLabelTop.setForeground(new Color(100, 100, 50));
-        staminaLabelTop.setFont(new Font("Tahoma", Font.BOLD, 12));
-
-        staminaBar = new NeonProgressBar();
-        staminaBar.setStamina(true); // Pastel yellow for stamina
-        staminaBar.setValue(staminaManager.getStamina());
-        staminaBar.setPreferredSize(new Dimension(120, 10)); // [AESTHETIC] Reduced size
-
-        centerPanel.add(staminaLabelTop, BorderLayout.NORTH);
-        centerPanel.add(staminaBar, BorderLayout.CENTER);
-        statusHeader.add(centerPanel, BorderLayout.CENTER);
-
         // East: Day & Inventory
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
@@ -141,6 +160,13 @@ public class GameGui extends JFrame {
         rightPanel.add(dayContainer);
         rightPanel.add(Box.createVerticalStrut(10));
         rightPanel.add(invBtn);
+        rightPanel.add(Box.createVerticalStrut(10));
+        timerLabel = new JLabel("⏱️ 30", SwingConstants.CENTER);
+        timerLabel.setForeground(new Color(80, 50, 100));
+        timerLabel.setFont(MAIN_FONT);
+        // only show timer in multiplayer mode
+        timerLabel.setVisible(true); // Always show timer as requested
+        rightPanel.add(timerLabel);
         statusHeader.add(rightPanel, BorderLayout.EAST);
 
         northPanel.add(statusHeader, BorderLayout.CENTER);
@@ -198,8 +224,40 @@ public class GameGui extends JFrame {
 
         southPanel.add(dialogueContainer, BorderLayout.CENTER);
         getContentPane().add(southPanel, BorderLayout.SOUTH);
+    }
 
+    /**
+     * Multiplayer constructor - initializes GUI based on provided GameClient.
+     * The characterKey is retrieved from the client's own PlayerState.
+     */
+    public GameGui(GameClient client) {
+        this.client = client;
+        String charKey = client.getTargetCharacter();
+        if (charKey == null || charKey.equals("None")) {
+            GameServer.PlayerState ps = client.getAllPlayers().get(client.getMyId());
+            charKey = ps != null ? ps.character : "Maprang";
+        }
+
+        // 1. Initialize GUI components
+        initGui(charKey);
+
+        // 2. Set up network listeners BEFORE starting game logic
+        client.setOnGameEndListener(results -> {
+            System.out.println("🏁 GAME_ENDED received! results count: " + results.size());
+            this.tournamentResults = List.copyOf(results.values());
+            this.myGameResult = results.get(client.getMyId());
+
+            if (myGameResult != null) {
+                System.out.println("🏆 myId found in results. Enabling result button...");
+                SwingUtilities.invokeLater(this::updateEndingButton);
+            } else {
+                System.out.println("⚠️ myId (" + client.getMyId() + ") not found in results map!");
+            }
+        });
+
+        // 3. Start game logic
         loadScene();
+        startQuestionTimer();
         setVisible(true);
     }
 
@@ -223,6 +281,8 @@ public class GameGui extends JFrame {
      * Trigger the confession scene when stamina is depleted
      */
     private void triggerConfessionScene() {
+        if (questionTimer != null)
+            questionTimer.stop();
         isShy = true; // Always shy during confession
         setBackgroundImage("/com/jibgirl/asset/classroom.png"); // Confession is always in Classroom
         buttonPanel.removeAll();
@@ -243,6 +303,11 @@ public class GameGui extends JFrame {
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             btn.addActionListener(e -> {
+                // Disable buttons to avoid multiple clicks
+                for (Component comp : buttonPanel.getComponents()) {
+                    if (comp instanceof JButton)
+                        comp.setEnabled(false);
+                }
                 manager.selectChoice(player, choice, staminaManager);
                 // After confession, show ending
                 gameState = "ENDED";
@@ -259,6 +324,8 @@ public class GameGui extends JFrame {
     }
 
     private void triggerBadEnd() {
+        if (questionTimer != null)
+            questionTimer.stop();
         setBackgroundImage("/com/jibgirl/asset/start.jpg"); // Return to home theme or similar
         buttonPanel.removeAll();
         Scene badEndScene = SceneFactory.createBadEndScene(characterKey);
@@ -272,20 +339,37 @@ public class GameGui extends JFrame {
 
         for (Choice choice : dialogue.getChoices()) {
             PremiumButton btn = new PremiumButton(choice.getText());
-            btn.setCute(false); // Not cute anymore!
-            btn.setChoiceStyle(true); // Red style
+            btn.setCute(true); // [FIX] Align with unified theme
             btn.setPreferredSize(new Dimension(240, 45));
             btn.setMaximumSize(new Dimension(240, 45));
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             btn.addActionListener(e -> {
                 // Return to selection screen
-                new CharacterSelectionScreen();
+                new StartScreen(); // [FIX] Go to Start instead of Selection to keep flow consistent
                 dispose();
             });
 
             buttonPanel.add(btn);
             buttonPanel.add(Box.createVerticalStrut(10));
+        }
+
+        // Add Online Support for Bad Endings
+        if (client != null) {
+            System.out.println("🎮 Online Bad End: sending FINISH_GAME to server...");
+            dialogueArea.setText(dialogueArea.getText() + "\n[รอผลสรุปวิเคราะห์จากเซิร์ฟเวอร์...]");
+            client.finishGame(player.getAffection(), staminaManager.getStamina(), characterKey);
+
+            // Re-build buttons for Online Mode
+            buttonPanel.removeAll();
+            endingButton = new PremiumButton("รอผลการจีบ... ⏳");
+            endingButton.setCute(true);
+            endingButton.setEnabled(false);
+            endingButton.setPreferredSize(new Dimension(250, 60));
+            buttonPanel.add(endingButton);
+
+            // Check if results were already received
+            updateEndingButton();
         }
 
         buttonPanel.revalidate();
@@ -294,6 +378,8 @@ public class GameGui extends JFrame {
 
     private void loadScene() {
         buttonPanel.removeAll();
+        minStaminaRequired = Integer.MAX_VALUE;
+
         // Set character image - use shy if isShy is true, otherwise normal
         String charPrefix = characterKey.toLowerCase();
         String expression = isShy ? "_shy.png" : "_normal.png";
@@ -310,6 +396,28 @@ public class GameGui extends JFrame {
         }
         buttonPanel.revalidate();
         buttonPanel.repaint();
+        verifyStaminaAvailability();
+    }
+
+    /**
+     * Verify if the player has enough stamina to select at least one choice.
+     * If not, trigger the ending sequence.
+     */
+    private void verifyStaminaAvailability() {
+        // Skip check if no choices were added or if it's already the end/day 5
+        if (minStaminaRequired == Integer.MAX_VALUE || day >= 5 || gameState.equals("ENDED")) {
+            return;
+        }
+
+        if (!staminaManager.hasEnoughStamina(minStaminaRequired)) {
+            System.out.println("⚠️ Stamina insufficiency detected (" + staminaManager.getStamina() +
+                    " < " + minStaminaRequired + "). Transitioning to ending...");
+            if (player.getAffection() < 50) {
+                triggerBadEnd();
+            } else {
+                triggerConfessionScene();
+            }
+        }
     }
 
     private void loadMaprangRoute() {
@@ -483,6 +591,11 @@ public class GameGui extends JFrame {
     }
 
     private void showEnding() {
+        System.out.println("🎬 [DEBUG] showEnding() called. Score: " + player.getAffection());
+        if (questionTimer != null) {
+            questionTimer.stop();
+        }
+        buttonPanel.removeAll();
         int score = player.getAffection();
         String endingText;
 
@@ -510,14 +623,101 @@ public class GameGui extends JFrame {
         }
 
         dialogueArea.setText(endingText);
-        PremiumButton exitBtn = new PremiumButton("BACK TO MAIN MENU 🏠✨");
-        exitBtn.setCute(true);
-        exitBtn.setPreferredSize(new Dimension(250, 60));
-        exitBtn.addActionListener(e -> {
-            new StartScreen();
-            dispose();
-        });
-        buttonPanel.add(exitBtn);
+        // notify server if playing online
+        if (client != null) {
+            System.out.println("🎮 Online mode: sending FINISH_GAME to server...");
+            dialogueArea.setText(endingText + "\n[รอผลสรุปวิเคราะห์จากเซิร์ฟเวอร์...]");
+            client.finishGame(player.getAffection(), staminaManager.getStamina(), characterKey);
+
+            // Create the ending button for Online Mode
+            endingButton = new PremiumButton("รอผลการจีบ... ⏳");
+            endingButton.setCute(true);
+            endingButton.setEnabled(false);
+            endingButton.setPreferredSize(new Dimension(250, 60));
+            buttonPanel.add(endingButton);
+
+            // Check if results were already received
+            updateEndingButton();
+        } else {
+            PremiumButton exitBtn = new PremiumButton("BACK TO MAIN MENU 🏠✨");
+            exitBtn.setCute(true);
+            exitBtn.setPreferredSize(new Dimension(250, 60));
+            exitBtn.addActionListener(e -> {
+                new StartScreen();
+                dispose();
+            });
+            buttonPanel.add(exitBtn);
+        }
+        buttonPanel.revalidate();
+        buttonPanel.repaint();
+    }
+
+    /**
+     * Updates the ending button state when tournament results are ready.
+     */
+    private void updateEndingButton() {
+        if (endingButton != null && tournamentResults != null && myGameResult != null) {
+            endingButton.setText("แสดงผลการจีบ Online ✨");
+            endingButton.setEnabled(true);
+            // Remove previous listeners if any (though there shouldn't be)
+            for (java.awt.event.ActionListener al : endingButton.getActionListeners()) {
+                endingButton.removeActionListener(al);
+            }
+            endingButton.addActionListener(e -> {
+                System.out.println("🚀 Transitioning to OnlineEndingScreen via button click.");
+                new OnlineEndingScreen(myGameResult, tournamentResults, client);
+                dispose();
+            });
+            buttonPanel.revalidate();
+            buttonPanel.repaint();
+        }
+    }
+
+    /**
+     * Initialize and start the per-question countdown timer for multiplayer mode.
+     * This will update the timerLabel and handle expiration automatically.
+     */
+    private void startQuestionTimer() {
+        if (questionTimer == null) {
+            questionTimer = new com.jibgirl.utils.QuestionTimer();
+            questionTimer.setOnTick(sec -> SwingUtilities.invokeLater(() -> {
+                timerLabel.setText("⏱️ " + sec);
+                if (questionTimer.isCritical()) {
+                    timerLabel.setForeground(Color.RED);
+                } else {
+                    timerLabel.setForeground(new Color(80, 50, 100));
+                }
+            }));
+            questionTimer.setOnTimeUp(() -> SwingUtilities.invokeLater(() -> {
+                if (!questionTimer.isTimeUp())
+                    return;
+                // disable choice buttons and progress
+                for (Component comp : buttonPanel.getComponents()) {
+                    if (comp instanceof JButton) {
+                        comp.setEnabled(false);
+                    }
+                }
+                JOptionPane.showMessageDialog(this,
+                        "เวลาหมด!", "TIME UP", JOptionPane.WARNING_MESSAGE);
+                if (day < 5) {
+                    day++;
+                    gameState = "START";
+                    isShy = false;
+                    player.addMoney(100);
+                    loadScene();
+                    startQuestionTimer();
+                } else {
+                    day = 6;
+                    gameState = "ENDED";
+                    showEnding();
+                }
+                if (client != null) {
+                    client.updateProgress(day, player.getAffection(), staminaManager.getStamina());
+                }
+            }));
+        }
+        questionTimer.reset();
+        questionTimer.start();
     }
 
     private void addChoice(String text, int affect, int cost, String nextState) {
@@ -525,25 +725,67 @@ public class GameGui extends JFrame {
     }
 
     private void addChoice(String text, int affect, int cost, String nextState, int staminaCost) {
-        Choice c = new Choice(text, affect, cost, "", staminaCost);
+        // [MOD] Fixed stamina costs based on choice order (Skip if cost is explicitly
+        // 0, e.g. Day 5)
+        int fixedStaminaCost;
+        if (staminaCost == 0) {
+            fixedStaminaCost = 0;
+        } else {
+            int choiceIndex = 0;
+            for (Component comp : buttonPanel.getComponents()) {
+                if (comp instanceof JButton) {
+                    choiceIndex++;
+                }
+            }
+
+            switch (choiceIndex) {
+                case 0:
+                    fixedStaminaCost = 25;
+                    break;
+                case 1:
+                    fixedStaminaCost = 20;
+                    break;
+                case 2:
+                    fixedStaminaCost = 15;
+                    break;
+                default:
+                    fixedStaminaCost = 5;
+                    break;
+            }
+        }
+
+        // Update minimum stamina required for this scene
+        if (fixedStaminaCost > 0 && fixedStaminaCost < minStaminaRequired) {
+            minStaminaRequired = fixedStaminaCost;
+        }
+
+        Choice c = new Choice(text, affect, cost, "", fixedStaminaCost);
         PremiumButton btn = new PremiumButton(text);
         btn.setCute(true);
         btn.setPreferredSize(new Dimension(240, 45));
         btn.setMaximumSize(new Dimension(240, 45));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Check if choice is affordable (money and stamina)
-        boolean hasMoneyAndStamina = player.canSpendMoney(cost) &&
-                staminaManager.hasEnoughStamina(staminaCost);
+        // Check if choice is affordable (money only - stamina exhaustion is handled by
+        // logic)
+        boolean hasMoney = player.canSpendMoney(cost);
 
-        // Disable button if not enough resources
-        if (!hasMoneyAndStamina) {
+        // Disable button if not enough money
+        if (!hasMoney) {
             btn.setEnabled(false);
-            btn.setToolTipText((player.canSpendMoney(cost) ? "" : "ไม่มีเงิน | ") +
-                    (staminaManager.hasEnoughStamina(staminaCost) ? "" : "สมดุลชีวิตไม่พอ"));
+            btn.setToolTipText("ไม่มีเงิน");
         }
 
         btn.addActionListener(e -> {
+            // Disable all buttons to prevent multiple clicks during transition
+            for (Component comp : buttonPanel.getComponents()) {
+                if (comp instanceof JButton)
+                    comp.setEnabled(false);
+            }
+
+            // stop the countdown regardless
+            if (questionTimer != null)
+                questionTimer.stop();
             // Try to execute choice
             boolean success = manager.selectChoice(player, c, staminaManager);
 
@@ -572,8 +814,7 @@ public class GameGui extends JFrame {
                         day++;
                         gameState = "START";
                         isShy = false; // Always reset shy on new day
-                        // restore stamina and give daily income
-                        staminaManager.restoreStamina();
+                        // give daily income (Stamina NOT restored anymore)
                         player.addMoney(100);
                         System.out.println("🎁 ได้รับรายได้ 100 บาท (เงินตอนนี้: " + player.getMoney() + ")");
                     } else if (nextState.equals("FINAL")) {
@@ -583,6 +824,10 @@ public class GameGui extends JFrame {
                         gameState = nextState;
                     }
                     loadScene();
+                    startQuestionTimer();
+                    if (client != null) {
+                        client.updateProgress(day, player.getAffection(), staminaManager.getStamina());
+                    }
                 }
             } else {
                 // Choice failed - show warning

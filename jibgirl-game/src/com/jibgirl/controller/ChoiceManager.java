@@ -25,12 +25,10 @@ public class ChoiceManager {
             return false;
         }
 
-        // 2. ตรวจสอบสมดุลชีวิตก่อน
+        // 2. Strict stamina check
         if (!staminaManager.hasEnoughStamina(choice.getStaminaCost())) {
-            System.out.println("❌ สมดุลชีวิตไม่พอครับ! (มี: " + staminaManager.getStamina() +
-                    " ต้องการ: " + choice.getStaminaCost() + ")");
-            System.out.println("Result: คุณเหนื่อยเกินไป ไม่สามารถทำได้...");
-            System.out.println("------------------------------------------------");
+            System.out.println(
+                    "❌ สมดุลชีวิตไม่พอครับ! (ขาดอีก " + (choice.getStaminaCost() - staminaManager.getStamina()) + "%)");
             return false;
         }
 
