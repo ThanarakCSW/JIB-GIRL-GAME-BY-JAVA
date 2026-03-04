@@ -60,7 +60,9 @@ public class GameServer {
         for (GameResult result : results) {
             sb.append(result.toString()).append(";");
         }
-        broadcast(sb.toString());
+        String message = sb.toString();
+        System.out.println("📢 Broadcasting GAME_ENDED: " + message);
+        broadcast(message);
     }
 
     private class ClientHandler implements Runnable {
@@ -85,7 +87,22 @@ public class GameServer {
                 String input;
                 while ((input = in.readLine()) != null) {
                     if (input.startsWith("JOIN:")) {
-                        String name = input.substring(5);
+                        String name = input.substring(5).trim();
+                        // [FIX] Prevent duplicate players with the same name
+                        for (ClientHandler ch : clients) {
+                            PlayerState ps = playerStates.get(ch.playerId);
+                            if (ps != null && ps.name.equalsIgnoreCase(name) && ch.playerId != playerId) {
+                                System.out.println("⚠️ Duplicate name '" + name
+                                        + "' detected. Disconnecting old Player " + ch.playerId);
+                                ch.sendMessage("ERROR:Name already taken/Reconnecting...");
+                                clients.remove(ch);
+                                playerStates.remove(ch.playerId);
+                                try {
+                                    ch.socket.close();
+                                } catch (IOException e) {
+                                }
+                            }
+                        }
                         playerStates.put(playerId, new PlayerState(playerId, name));
                         broadcastSync();
                     } else if (input.startsWith("SELECT:")) {
@@ -132,10 +149,12 @@ public class GameServer {
                                 System.out.println(
                                         "🎮 Player " + playerId + " finished with score: " + result.getFinalScore());
 
-                                // Check if all players finished
+                                // Broadcast results so far so players can see the leaderboard immediately
+                                broadcastGameEnded();
+
+                                // Check if all players finished to mark game as ended
                                 if (finishedPlayers.size() >= playerStates.size()) {
                                     gameEnded = true;
-                                    broadcastGameEnded();
                                 }
                             }
                         }

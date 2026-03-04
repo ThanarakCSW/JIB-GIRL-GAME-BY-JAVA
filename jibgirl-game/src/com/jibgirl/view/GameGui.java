@@ -43,20 +43,28 @@ public class GameGui extends JFrame {
     private JLabel timerLabel;
     private com.jibgirl.utils.QuestionTimer questionTimer;
     private int minStaminaRequired = Integer.MAX_VALUE;
+    private PremiumButton endingButton; // Button for online ranking
+    private GameResult myGameResult;
+    private List<GameResult> tournamentResults;
 
     private static final Font MAIN_FONT = new Font("Tahoma", Font.BOLD, 18);
     private static final Font DIALOG_FONT = new Font("Tahoma", Font.BOLD, 22);
 
     public GameGui(String characterKey) {
+        this.client = null;
+        initGui(characterKey);
+        loadScene();
+        startQuestionTimer();
+        setVisible(true);
+    }
+
+    private void initGui(String characterKey) {
         this.characterKey = characterKey;
         // เริ่มต้นเงิน 100 บาทตามระบบรายได้รายวัน
         this.player = new Player("เซนต์", 100);
         this.manager = new ChoiceManager();
         this.staminaManager = new StaminaManager();
         this.inventory = new Inventory();
-
-        // multiplayer client is null in this constructor
-        this.client = null;
 
         setTitle("💖 Jib Girl Game - Cute Edition 💖");
         setSize(1200, 900);
@@ -75,16 +83,34 @@ public class GameGui extends JFrame {
         northPanel.setOpaque(false);
         northPanel.setBorder(new EmptyBorder(20, 20, 10, 20));
 
-        // Top Header: Relationship Bar (Matches mockup - top center)
-        JPanel topHeader = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        // Top Header: Relationship Bar & Stamina Bar (Stacked in center)
+        JPanel topHeader = new JPanel();
+        topHeader.setLayout(new BoxLayout(topHeader, BoxLayout.Y_AXIS));
         topHeader.setOpaque(false);
+
+        // Affection Bar
         affectionBar = new NeonProgressBar();
         affectionBar.setCute(true);
         affectionBar.setValue(player.getAffection());
         affectionBar.setStringPainted(true);
         affectionBar.setString("Relationship");
         affectionBar.setPreferredSize(new Dimension(800, 30));
+        affectionBar.setMaximumSize(new Dimension(800, 30));
+        affectionBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Stamina Bar
+        staminaBar = new NeonProgressBar();
+        staminaBar.setStamina(true);
+        staminaBar.setValue(staminaManager.getStamina());
+        staminaBar.setStringPainted(true);
+        staminaBar.setString("Stamina");
+        staminaBar.setPreferredSize(new Dimension(800, 30));
+        staminaBar.setMaximumSize(new Dimension(800, 30));
+        staminaBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         topHeader.add(affectionBar);
+        topHeader.add(Box.createVerticalStrut(10));
+        topHeader.add(staminaBar);
         northPanel.add(topHeader, BorderLayout.NORTH);
 
         // Sub-Header: Money (WEST) and Day (EAST)
@@ -113,24 +139,6 @@ public class GameGui extends JFrame {
         leftPanel.add(Box.createVerticalStrut(10));
         leftPanel.add(shopBtn);
         statusHeader.add(leftPanel, BorderLayout.WEST);
-
-        // Center: Stamina Bar
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setOpaque(false);
-        centerPanel.setBorder(new EmptyBorder(0, 20, 0, 20));
-
-        JLabel staminaLabelTop = new JLabel("⚡ Stamina", SwingConstants.CENTER);
-        staminaLabelTop.setForeground(new Color(100, 100, 50));
-        staminaLabelTop.setFont(new Font("Tahoma", Font.BOLD, 12));
-
-        staminaBar = new NeonProgressBar();
-        staminaBar.setStamina(true); // Pastel yellow for stamina
-        staminaBar.setValue(staminaManager.getStamina());
-        staminaBar.setPreferredSize(new Dimension(120, 10)); // [AESTHETIC] Reduced size
-
-        centerPanel.add(staminaLabelTop, BorderLayout.NORTH);
-        centerPanel.add(staminaBar, BorderLayout.CENTER);
-        statusHeader.add(centerPanel, BorderLayout.CENTER);
 
         // East: Day & Inventory
         JPanel rightPanel = new JPanel();
@@ -216,10 +224,6 @@ public class GameGui extends JFrame {
 
         southPanel.add(dialogueContainer, BorderLayout.CENTER);
         getContentPane().add(southPanel, BorderLayout.SOUTH);
-
-        loadScene();
-        startQuestionTimer();
-        setVisible(true);
     }
 
     /**
@@ -227,28 +231,34 @@ public class GameGui extends JFrame {
      * The characterKey is retrieved from the client's own PlayerState.
      */
     public GameGui(GameClient client) {
-        // [FIX] Use targetCharacter from client (set by host) instead of local player
-        // state
+        this.client = client;
         String charKey = client.getTargetCharacter();
         if (charKey == null || charKey.equals("None")) {
-            // Fallback to local state just in case, but targetCharacter should be dominant
             GameServer.PlayerState ps = client.getAllPlayers().get(client.getMyId());
-            charKey = ps != null ? ps.character : "Maprang"; // Default to Maprang if all else fails
+            charKey = ps != null ? ps.character : "Maprang";
         }
-        // call local constructor to build GUI
-        this(charKey);
-        // save client reference
-        this.client = client;
-        // listen for game-end broadcast and display results
+
+        // 1. Initialize GUI components
+        initGui(charKey);
+
+        // 2. Set up network listeners BEFORE starting game logic
         client.setOnGameEndListener(results -> {
-            GameResult myRes = results.get(client.getMyId());
-            if (myRes != null) {
-                SwingUtilities.invokeLater(() -> {
-                    new OnlineEndingScreen(myRes, List.copyOf(results.values()));
-                    dispose();
-                });
+            System.out.println("🏁 GAME_ENDED received! results count: " + results.size());
+            this.tournamentResults = List.copyOf(results.values());
+            this.myGameResult = results.get(client.getMyId());
+
+            if (myGameResult != null) {
+                System.out.println("🏆 myId found in results. Enabling result button...");
+                SwingUtilities.invokeLater(this::updateEndingButton);
+            } else {
+                System.out.println("⚠️ myId (" + client.getMyId() + ") not found in results map!");
             }
         });
+
+        // 3. Start game logic
+        loadScene();
+        startQuestionTimer();
+        setVisible(true);
     }
 
     public void setBackgroundImage(String fileName) {
@@ -329,20 +339,37 @@ public class GameGui extends JFrame {
 
         for (Choice choice : dialogue.getChoices()) {
             PremiumButton btn = new PremiumButton(choice.getText());
-            btn.setCute(false); // Not cute anymore!
-            btn.setChoiceStyle(true); // Red style
+            btn.setCute(true); // [FIX] Align with unified theme
             btn.setPreferredSize(new Dimension(240, 45));
             btn.setMaximumSize(new Dimension(240, 45));
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             btn.addActionListener(e -> {
                 // Return to selection screen
-                new CharacterSelectionScreen();
+                new StartScreen(); // [FIX] Go to Start instead of Selection to keep flow consistent
                 dispose();
             });
 
             buttonPanel.add(btn);
             buttonPanel.add(Box.createVerticalStrut(10));
+        }
+
+        // Add Online Support for Bad Endings
+        if (client != null) {
+            System.out.println("🎮 Online Bad End: sending FINISH_GAME to server...");
+            dialogueArea.setText(dialogueArea.getText() + "\n[รอผลสรุปวิเคราะห์จากเซิร์ฟเวอร์...]");
+            client.finishGame(player.getAffection(), staminaManager.getStamina(), characterKey);
+
+            // Re-build buttons for Online Mode
+            buttonPanel.removeAll();
+            endingButton = new PremiumButton("รอผลการจีบ... ⏳");
+            endingButton.setCute(true);
+            endingButton.setEnabled(false);
+            endingButton.setPreferredSize(new Dimension(250, 60));
+            buttonPanel.add(endingButton);
+
+            // Check if results were already received
+            updateEndingButton();
         }
 
         buttonPanel.revalidate();
@@ -564,6 +591,7 @@ public class GameGui extends JFrame {
     }
 
     private void showEnding() {
+        System.out.println("🎬 [DEBUG] showEnding() called. Score: " + player.getAffection());
         if (questionTimer != null) {
             questionTimer.stop();
         }
@@ -597,18 +625,52 @@ public class GameGui extends JFrame {
         dialogueArea.setText(endingText);
         // notify server if playing online
         if (client != null) {
+            System.out.println("🎮 Online mode: sending FINISH_GAME to server...");
+            dialogueArea.setText(endingText + "\n[รอผลสรุปวิเคราะห์จากเซิร์ฟเวอร์...]");
             client.finishGame(player.getAffection(), staminaManager.getStamina(), characterKey);
+
+            // Create the ending button for Online Mode
+            endingButton = new PremiumButton("รอผลการจีบ... ⏳");
+            endingButton.setCute(true);
+            endingButton.setEnabled(false);
+            endingButton.setPreferredSize(new Dimension(250, 60));
+            buttonPanel.add(endingButton);
+
+            // Check if results were already received
+            updateEndingButton();
+        } else {
+            PremiumButton exitBtn = new PremiumButton("BACK TO MAIN MENU 🏠✨");
+            exitBtn.setCute(true);
+            exitBtn.setPreferredSize(new Dimension(250, 60));
+            exitBtn.addActionListener(e -> {
+                new StartScreen();
+                dispose();
+            });
+            buttonPanel.add(exitBtn);
         }
-        PremiumButton exitBtn = new PremiumButton("BACK TO MAIN MENU 🏠✨");
-        exitBtn.setCute(true);
-        exitBtn.setPreferredSize(new Dimension(250, 60));
-        exitBtn.addActionListener(e -> {
-            new StartScreen();
-            dispose();
-        });
-        buttonPanel.add(exitBtn);
         buttonPanel.revalidate();
         buttonPanel.repaint();
+    }
+
+    /**
+     * Updates the ending button state when tournament results are ready.
+     */
+    private void updateEndingButton() {
+        if (endingButton != null && tournamentResults != null && myGameResult != null) {
+            endingButton.setText("แสดงผลการจีบ Online ✨");
+            endingButton.setEnabled(true);
+            // Remove previous listeners if any (though there shouldn't be)
+            for (java.awt.event.ActionListener al : endingButton.getActionListeners()) {
+                endingButton.removeActionListener(al);
+            }
+            endingButton.addActionListener(e -> {
+                System.out.println("🚀 Transitioning to OnlineEndingScreen via button click.");
+                new OnlineEndingScreen(myGameResult, tournamentResults, client);
+                dispose();
+            });
+            buttonPanel.revalidate();
+            buttonPanel.repaint();
+        }
     }
 
     /**

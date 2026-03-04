@@ -21,6 +21,7 @@ public class LobbyScreen extends JFrame {
     private CardLayout cardLayout;
     private JLabel targetCharLabel;
     private boolean isHost = false;
+    private boolean isTransitioning = false;
 
     public LobbyScreen() {
         client = new GameClient();
@@ -47,12 +48,23 @@ public class LobbyScreen extends JFrame {
         client.setOnSyncListener(this::updatePlayerList);
         client.setOnGameStartListener(() -> {
             SwingUtilities.invokeLater(() -> {
+                if (isTransitioning)
+                    return;
+                isTransitioning = true;
                 new GameGui(client);
                 dispose();
             });
         });
 
         setVisible(true);
+    }
+
+    @Override
+    public void dispose() {
+        if (client != null && !isTransitioning) {
+            client.disconnect();
+        }
+        super.dispose();
     }
 
     private void createModeSelectionPanel() {
@@ -88,7 +100,7 @@ public class LobbyScreen extends JFrame {
         });
 
         PremiumButton joinBtn = new PremiumButton("เข้าร่วมห้อง (Join) 🚀");
-        joinBtn.setCute(false);
+        joinBtn.setCute(true); // [FIX] Align with theme
         joinBtn.setMaximumSize(new Dimension(300, 60));
         joinBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         joinBtn.addActionListener(e -> {
@@ -110,7 +122,7 @@ public class LobbyScreen extends JFrame {
         container.add(Box.createVerticalStrut(10));
 
         PremiumButton backBtn = new PremiumButton("กลับไปหน้าหลัก ⬅️");
-        backBtn.setCute(false);
+        backBtn.setCute(true); // [FIX] Align with theme
         backBtn.setMaximumSize(new Dimension(300, 60));
         backBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         backBtn.addActionListener(e -> {
@@ -147,7 +159,7 @@ public class LobbyScreen extends JFrame {
         southPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
 
         PremiumButton backBtn = new PremiumButton("⬅️ กลับ");
-        backBtn.setCute(false);
+        backBtn.setCute(true); // [FIX] Align with theme
         backBtn.setPreferredSize(new Dimension(150, 50));
         backBtn.addActionListener(e -> {
             cardLayout.show(mainContainer, "MODE");
@@ -222,8 +234,7 @@ public class LobbyScreen extends JFrame {
         south.setOpaque(false);
 
         PremiumButton exitBtn = new PremiumButton("ออกจากห้อง 🚪");
-        exitBtn.setCute(false);
-        exitBtn.setChoiceStyle(true); // Red style
+        exitBtn.setCute(true); // [FIX] Align with theme
         exitBtn.setPreferredSize(new Dimension(200, 70));
         exitBtn.addActionListener(e -> {
             client.disconnect();
@@ -266,18 +277,13 @@ public class LobbyScreen extends JFrame {
         }
     }
 
-    @Override
-    public void dispose() {
-        if (client != null) {
-            client.disconnect();
-        }
-        super.dispose();
-    }
-
     private void updatePlayerList(Map<Integer, GameServer.PlayerState> players) {
         SwingUtilities.invokeLater(() -> {
+            if (client == null || targetCharLabel == null || playerListPanel == null)
+                return;
             playerListPanel.removeAll();
-            targetCharLabel.setText("เป้าหมายการจีบ: " + client.getTargetCharacter());
+            String target = client.getTargetCharacter();
+            targetCharLabel.setText("เป้าหมายการจีบ: " + (target == null ? "None" : target));
 
             for (GameServer.PlayerState p : players.values()) {
                 ModernPanel panel = new ModernPanel(20);

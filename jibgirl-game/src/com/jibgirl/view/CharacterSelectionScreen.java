@@ -20,18 +20,33 @@ public class CharacterSelectionScreen extends JFrame {
         JLabel titleLabel = new JLabel("✨ เลือกตัวละครที่คุณต้องการจีบ ✨", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Tahoma", Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setBorder(new EmptyBorder(50, 0, 40, 0));
+        titleLabel.setBorder(new EmptyBorder(20, 0, 20, 0));
         add(titleLabel, BorderLayout.NORTH);
 
         JPanel selectionPanel = new JPanel(new GridLayout(1, 3, 30, 0));
         selectionPanel.setOpaque(false);
-        selectionPanel.setBorder(new EmptyBorder(0, 50, 80, 50));
+        selectionPanel.setBorder(new EmptyBorder(0, 50, 20, 50));
 
         selectionPanel.add(createCharacterCard("มะปราง (Maprang) 🖌️", "Maprang"));
         selectionPanel.add(createCharacterCard("ขนม (Kanom) 📸", "Kanom"));
         selectionPanel.add(createCharacterCard("ไอซ์ (Ice) 🏀", "Ice"));
 
         add(selectionPanel, BorderLayout.CENTER);
+
+        // ===== SOUTH: Back Button =====
+        JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        southPanel.setOpaque(false);
+        southPanel.setBorder(new EmptyBorder(0, 0, 20, 0));
+
+        PremiumButton backBtn = new PremiumButton("กลับหน้าหลัก ⬅️");
+        backBtn.setCute(true);
+        backBtn.setPreferredSize(new Dimension(200, 60));
+        backBtn.addActionListener(e -> {
+            new StartScreen();
+            dispose();
+        });
+        southPanel.add(backBtn);
+        add(southPanel, BorderLayout.SOUTH);
 
         setVisible(true);
     }

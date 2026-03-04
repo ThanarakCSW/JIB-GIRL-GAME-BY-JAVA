@@ -75,8 +75,10 @@ public class GameClient {
                     }
                 }
             }
-            if (onGameEndListener != null)
+            if (onGameEndListener != null) {
+                System.out.println("📡 Dispatching onGameEndListener with " + gameResults.size() + " results.");
                 onGameEndListener.accept(gameResults);
+            }
         }
     }
 
@@ -105,13 +107,18 @@ public class GameClient {
     }
 
     public void startGame() {
-        if (out != null)
+        if (out != null) {
+            System.out.println("🎮 Sending START_GAME to server."); // Added logging
             out.println("START_GAME");
+        }
     }
 
     public void finishGame(int affection, int stamina, String character) {
-        if (out != null)
+        if (out != null) {
+            System.out.println("🎮 Sending FINISH_GAME to server: affection=" + affection + ", stamina=" + stamina
+                    + ", character=" + character); // Added logging
             out.println("FINISH_GAME:" + affection + ":" + stamina + ":" + character);
+        }
     }
 
     public void setOnSyncListener(Consumer<Map<Integer, GameServer.PlayerState>> listener) {

@@ -1,6 +1,7 @@
 package com.jibgirl.view;
 
 import com.jibgirl.network.GameResult;
+import com.jibgirl.network.GameClient;
 import com.jibgirl.utils.UIUtils.ModernPanel;
 import com.jibgirl.utils.UIUtils.PremiumButton;
 
@@ -15,10 +16,12 @@ public class OnlineEndingScreen extends JFrame {
     private GameResult myResult;
     private List<GameResult> allResults;
     private GameResult winnerResult;
+    private GameClient client;
 
-    public OnlineEndingScreen(GameResult myResult, List<GameResult> allResults) {
+    public OnlineEndingScreen(GameResult myResult, List<GameResult> allResults, GameClient client) {
         this.myResult = myResult;
         this.allResults = allResults;
+        this.client = client;
         this.winnerResult = GameResult.determineWinner(allResults);
         this.isWinner = (myResult.getPlayerId() == winnerResult.getPlayerId());
 
@@ -46,11 +49,13 @@ public class OnlineEndingScreen extends JFrame {
         southPanel.setBorder(new EmptyBorder(0, 0, 50, 0));
 
         PremiumButton backBtn = new PremiumButton("กลับหน้าหลัก");
-        backBtn.setCute(false); // We want red style
-        backBtn.setChoiceStyle(true); // Red style from UIUtils
+        backBtn.setCute(true); // [FIX] Align with theme
         backBtn.setPreferredSize(new Dimension(200, 60));
         backBtn.setFont(new Font("Tahoma", Font.BOLD, 20));
         backBtn.addActionListener(e -> {
+            if (client != null) {
+                client.disconnect();
+            }
             new StartScreen();
             dispose();
         });
