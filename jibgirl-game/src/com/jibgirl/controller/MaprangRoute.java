@@ -196,7 +196,8 @@ public class MaprangRoute {
     }
 
     public static void main(String[] args) {
-        Player testPlayer = new Player("เซนต์", 1000);
+        // start with 100 for consistency with new daily income system
+        Player testPlayer = new Player("เซนต์", 100);
         MaprangRoute game = new MaprangRoute(testPlayer);
         game.start();
     }
