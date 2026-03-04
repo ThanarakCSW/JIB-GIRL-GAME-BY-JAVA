@@ -23,7 +23,8 @@ public class OnlineEndingScreen extends JFrame {
         this.allResults = allResults;
         this.client = client;
         this.winnerResult = GameResult.determineWinner(allResults);
-        this.isWinner = (myResult.getPlayerId() == winnerResult.getPlayerId());
+        // [FIX] Winner is anyone who has the same top score as the absolute winner
+        this.isWinner = (myResult.getFinalScore() == winnerResult.getFinalScore());
 
         setTitle("🎮 ผลลัพธ์การจีบสาว 🎮");
         setSize(1000, 700);
@@ -97,40 +98,69 @@ public class OnlineEndingScreen extends JFrame {
         List<GameResult> sortedResults = GameResult.rankPlayers(allResults);
 
         // Find who goes where
-        GameResult winner = sortedResults.get(0);
-        List<GameResult> losers = new ArrayList<>(sortedResults);
-        losers.remove(0);
+        GameResult topWinner = sortedResults.get(0);
+        int topScore = topWinner.getFinalScore();
 
-        // Left Card (Loser 1)
-        if (losers.size() > 0) {
-            panel.add(createResultCard("พวกขี้แพ้", losers.get(0), false), gbc);
-        } else {
-            panel.add(createEmptyCard(), gbc);
+        List<GameResult> winners = new ArrayList<>();
+        List<GameResult> losers = new ArrayList<>();
+
+        for (GameResult r : sortedResults) {
+            if (r.getFinalScore() == topScore) {
+                winners.add(r);
+            } else {
+                losers.add(r);
+            }
         }
 
-        // Center Card (Winner)
-        panel.add(createResultCard("พระเอก", winner, true), gbc);
-
-        // Right Card (Loser 2)
-        if (losers.size() > 1) {
-            panel.add(createResultCard("พวกขี้แพ้", losers.get(1), false), gbc);
+        // Display logic (up to 3 cards)
+        if (winners.size() >= 3) {
+            // Unusual case: 3-way tie!
+            panel.add(createResultCard("พระเอก (เสมอ)", winners.get(1), true), gbc);
+            panel.add(createResultCard("พระเอก (เสมอ)", winners.get(0), true), gbc);
+            panel.add(createResultCard("พระเอก (เสมอ)", winners.get(2), true), gbc);
+        } else if (winners.size() == 2) {
+            // 2-way tie
+            panel.add(createResultCard("พวกขี้แพ้", losers.isEmpty() ? null : losers.get(0), false), gbc);
+            panel.add(createResultCard("พระเอก (เสมอ)", winners.get(0), true), gbc);
+            panel.add(createResultCard("พระเอก (เสมอ)", winners.get(1), true), gbc);
         } else {
-            panel.add(createEmptyCard(), gbc);
+            // Single winner
+            if (!losers.isEmpty()) {
+                panel.add(createResultCard("พวกขี้แพ้", losers.get(0), false), gbc);
+            } else {
+                panel.add(createEmptyCard(), gbc);
+            }
+
+            panel.add(createResultCard("พระเอก", winners.get(0), true), gbc);
+
+            if (losers.size() > 1) {
+                panel.add(createResultCard("พวกขี้แพ้", losers.get(1), false), gbc);
+            } else {
+                panel.add(createEmptyCard(), gbc);
+            }
         }
 
         return panel;
     }
 
     private JPanel createResultCard(String title, GameResult result, boolean isWinnerCard) {
+        if (result == null)
+            return createEmptyCard();
+
         ModernPanel card = new ModernPanel(40);
-        card.setBackground(new Color(224, 187, 228, 200)); // Purple pastel from mockup
-        card.setPreferredSize(new Dimension(280, 380));
+        // [FIX] Winner card uses Golden theme, Loser card uses Purple
+        if (isWinnerCard) {
+            card.setBackground(new Color(255, 215, 0, 200)); // Golden/Gold
+        } else {
+            card.setBackground(new Color(224, 187, 228, 200)); // Purple pastel
+        }
+        card.setPreferredSize(new Dimension(280, 400));
         card.setLayout(new BorderLayout());
         card.setBorder(new EmptyBorder(25, 20, 25, 20));
 
         JLabel titleLabel = new JLabel(title, SwingConstants.CENTER);
         titleLabel.setFont(new Font("Tahoma", Font.BOLD, 22));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(isWinnerCard ? new Color(100, 70, 0) : Color.WHITE);
         card.add(titleLabel, BorderLayout.NORTH);
 
         // Content area for stats
@@ -141,7 +171,8 @@ public class OnlineEndingScreen extends JFrame {
 
         JLabel nameLabel = new JLabel(result.getPlayerName(), SwingConstants.CENTER);
         nameLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
-        nameLabel.setForeground(new Color(100, 50, 100));
+        // Use darker contrast for golden background
+        nameLabel.setForeground(isWinnerCard ? new Color(80, 50, 0) : new Color(100, 50, 100));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         stats.add(nameLabel);
 

@@ -55,7 +55,8 @@ public class GameServer {
     }
 
     private synchronized void broadcastGameEnded() {
-        StringBuilder sb = new StringBuilder("GAME_ENDED:");
+        String status = (finishedPlayers.size() >= playerStates.size()) ? "COMPLETE:" : "WAITING:";
+        StringBuilder sb = new StringBuilder("GAME_ENDED:" + status);
         List<GameResult> results = new ArrayList<>(finishedPlayers.values());
         for (GameResult result : results) {
             sb.append(result.toString()).append(";");
@@ -106,6 +107,7 @@ public class GameServer {
                                     ch.sendMessage("ERROR:Reconnecting...");
                                     clients.remove(ch);
                                     playerStates.remove(ch.playerId);
+                                    finishedPlayers.remove(ch.playerId); // [FIX] Remove stale results too
                                     try {
                                         ch.socket.close();
                                     } catch (IOException e) {
@@ -207,7 +209,8 @@ public class GameServer {
 
     private boolean isNameTaken(String name) {
         for (PlayerState ps : playerStates.values()) {
-            if (ps.name.equalsIgnoreCase(name)) return true;
+            if (ps.name.equalsIgnoreCase(name))
+                return true;
         }
         return false;
     }
