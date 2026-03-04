@@ -55,7 +55,8 @@ public class GameServer {
     }
 
     private synchronized void broadcastGameEnded() {
-        StringBuilder sb = new StringBuilder("GAME_ENDED:");
+        String status = (finishedPlayers.size() >= playerStates.size()) ? "COMPLETE:" : "WAITING:";
+        StringBuilder sb = new StringBuilder("GAME_ENDED:" + status);
         List<GameResult> results = new ArrayList<>(finishedPlayers.values());
         for (GameResult result : results) {
             sb.append(result.toString()).append(";");
