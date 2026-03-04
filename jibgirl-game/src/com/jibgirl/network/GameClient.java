@@ -16,6 +16,7 @@ public class GameClient {
     private Consumer<Integer> onWelcomeListener;
     private Runnable onGameStartListener;
     private Consumer<Map<Integer, GameResult>> onGameEndListener;
+    private String targetCharacter = "None";
 
     public void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
@@ -46,8 +47,12 @@ public class GameClient {
                 String[] states = data.split(";");
                 for (String s : states) {
                     if (!s.trim().isEmpty()) {
-                        GameServer.PlayerState state = GameServer.PlayerState.fromString(s);
-                        allPlayers.put(state.id, state);
+                        if (s.startsWith("TARGET-")) {
+                            targetCharacter = s.substring(7);
+                        } else {
+                            GameServer.PlayerState state = GameServer.PlayerState.fromString(s);
+                            allPlayers.put(state.id, state);
+                        }
                     }
                 }
             }
@@ -83,6 +88,15 @@ public class GameClient {
     public void selectCharacter(String character) {
         if (out != null)
             out.println("SELECT:" + character);
+    }
+
+    public void setTargetCharacter(String character) {
+        if (out != null)
+            out.println("SET_TARGET:" + character);
+    }
+
+    public String getTargetCharacter() {
+        return targetCharacter;
     }
 
     public void updateProgress(int day, int affection) {

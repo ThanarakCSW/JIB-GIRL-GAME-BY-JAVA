@@ -7,12 +7,13 @@ import java.util.concurrent.*;
 
 public class GameServer {
     private static final int PORT = 12345;
-    private static final int MAX_PLAYERS = 3;
+    private static final int MAX_PLAYERS = 10;
     private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
     private final Map<Integer, PlayerState> playerStates = new ConcurrentHashMap<>();
     private final Map<Integer, GameResult> finishedPlayers = new ConcurrentHashMap<>();
     private int idCounter = 0;
     private volatile boolean gameEnded = false;
+    private String targetCharacter = "None"; // Character set by host
 
     public void start() {
         System.out.println("✨ Jib Girl Game Server started on port " + PORT);
@@ -46,6 +47,7 @@ public class GameServer {
 
     private synchronized void broadcastSync() {
         StringBuilder sb = new StringBuilder("SYNC:");
+        sb.append("TARGET-").append(targetCharacter).append(";");
         for (PlayerState state : playerStates.values()) {
             sb.append(state.toString()).append(";");
         }
@@ -93,6 +95,14 @@ public class GameServer {
                             state.character = character;
                             broadcastSync();
                         }
+                    } else if (input.startsWith("SET_TARGET:")) {
+                        targetCharacter = input.substring(11);
+                        // Also update host's character for consistency
+                        PlayerState hostState = playerStates.get(playerId);
+                        if (hostState != null) {
+                            hostState.character = targetCharacter;
+                        }
+                        broadcastSync();
                     } else if (input.startsWith("UPDATE:")) {
                         String[] parts = input.substring(7).split(":");
                         PlayerState state = playerStates.get(playerId);

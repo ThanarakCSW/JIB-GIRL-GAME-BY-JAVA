@@ -1,13 +1,14 @@
 package com.jibgirl.view;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import com.jibgirl.network.GameClient;
+import com.jibgirl.network.GameServer;
+import com.jibgirl.utils.UIUtils.ModernPanel;
+import com.jibgirl.utils.UIUtils.PremiumButton;
 import java.awt.*;
 import java.io.IOException;
 import java.util.Map;
-import com.jibgirl.network.GameClient;
-import com.jibgirl.network.GameServer;
-import com.jibgirl.utils.UIUtils.*;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class LobbyScreen extends JFrame {
     private GameClient client;
@@ -16,114 +17,248 @@ public class LobbyScreen extends JFrame {
     private JPanel playerListPanel;
     private PremiumButton startButton;
     private String myName = "";
+    private JPanel mainContainer;
+    private CardLayout cardLayout;
+    private JLabel targetCharLabel;
+    private boolean isHost = false;
 
     public LobbyScreen() {
         client = new GameClient();
         setTitle("💖 Multiplayer Lobby - Jib Girl Game 💖");
-        setSize(800, 600);
+        setSize(900, 700);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+
+        cardLayout = new CardLayout();
+        mainContainer = new JPanel(cardLayout);
+        mainContainer.setOpaque(false);
 
         BackgroundPanel background = new BackgroundPanel("/com/jibgirl/asset/start.jpg");
         background.setLayout(new BorderLayout());
 
-        // ===== Connection Panel (North) =====
-        JPanel connPanel = new JPanel(new FlowLayout());
-        connPanel.setOpaque(false);
-        connPanel.setBorder(new EmptyBorder(30, 0, 0, 0));
+        // Create different panels
+        createModeSelectionPanel();
+        createCharacterSelectionPanel();
+        createLobbyPanel();
 
-        nameField = new JTextField("Player", 10);
-        ipField = new JTextField("localhost", 10);
-        PremiumButton connectBtn = new PremiumButton("Join Server ✨");
-        connectBtn.setCute(true);
-        connectBtn.setPreferredSize(new Dimension(150, 40));
+        background.add(mainContainer, BorderLayout.CENTER);
+        setContentPane(background);
 
-        connPanel.add(new JLabel("Name:"));
-        connPanel.add(nameField);
-        connPanel.add(new JLabel("IP:"));
-        connPanel.add(ipField);
-        connPanel.add(connectBtn);
+        client.setOnSyncListener(this::updatePlayerList);
+        client.setOnGameStartListener(() -> {
+            SwingUtilities.invokeLater(() -> {
+                new GameGui(client);
+                dispose();
+            });
+        });
 
-        background.add(connPanel, BorderLayout.NORTH);
+        setVisible(true);
+    }
 
-        // ===== Player List (Center) =====
+    private void createModeSelectionPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setOpaque(false);
+
+        ModernPanel container = new ModernPanel(40);
+        container.setBackground(new Color(255, 255, 255, 180));
+        container.setPreferredSize(new Dimension(500, 400));
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        container.setBorder(new EmptyBorder(40, 40, 40, 40));
+
+        JLabel title = new JLabel("✨ โหมดออนไลน์ ✨", SwingConstants.CENTER);
+        title.setFont(new Font("Tahoma", Font.BOLD, 32));
+        title.setForeground(new Color(100, 50, 50));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        nameField = new JTextField("Player");
+        nameField.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        nameField.setMaximumSize(new Dimension(300, 50));
+
+        ipField = new JTextField("localhost");
+        ipField.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        ipField.setMaximumSize(new Dimension(300, 50));
+
+        PremiumButton hostBtn = new PremiumButton("สร้างห้องใหม่ (Host) 🏠");
+        hostBtn.setCute(true);
+        hostBtn.setMaximumSize(new Dimension(300, 60));
+        hostBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        hostBtn.addActionListener(e -> {
+            isHost = true;
+            startHost();
+        });
+
+        PremiumButton joinBtn = new PremiumButton("เข้าร่วมห้อง (Join) 🚀");
+        joinBtn.setCute(false);
+        joinBtn.setMaximumSize(new Dimension(300, 60));
+        joinBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        joinBtn.addActionListener(e -> {
+            isHost = false;
+            joinServer();
+        });
+
+        container.add(title);
+        container.add(Box.createVerticalStrut(30));
+        container.add(new JLabel("ชื่อผู้เล่น:"));
+        container.add(nameField);
+        container.add(Box.createVerticalStrut(10));
+        container.add(new JLabel("Server IP: (สำหรับคนจอย)"));
+        container.add(ipField);
+        container.add(Box.createVerticalStrut(30));
+        container.add(hostBtn);
+        container.add(Box.createVerticalStrut(10));
+        container.add(joinBtn);
+
+        panel.add(container);
+        mainContainer.add(panel, "MODE");
+    }
+
+    private void createCharacterSelectionPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(50, 50, 50, 50));
+
+        JLabel title = new JLabel("✨ เลือกตัวละครที่จะจีบ (Host Only) ✨", SwingConstants.CENTER);
+        title.setFont(new Font("Tahoma", Font.BOLD, 32));
+        title.setForeground(Color.WHITE);
+        panel.add(title, BorderLayout.NORTH);
+
+        JPanel grid = new JPanel(new GridLayout(1, 3, 20, 0));
+        grid.setOpaque(false);
+
+        grid.add(createCharCard("Maprang", "มะปราง 🎨"));
+        grid.add(createCharCard("Kanom", "ขนม 📸"));
+        grid.add(createCharCard("Ice", "ไอซ์ 🏀"));
+
+        panel.add(grid, BorderLayout.CENTER);
+        mainContainer.add(panel, "CHAR_SELECT");
+    }
+
+    private JPanel createCharCard(String key, String name) {
+        ModernPanel card = new ModernPanel(30);
+        card.setBackground(new Color(255, 255, 255, 220));
+        card.setLayout(new BorderLayout());
+
+        JLabel sprite = new JLabel();
+        String path = "/com/jibgirl/asset/" + key.toLowerCase() + "_normal.png";
+        java.net.URL url = getClass().getResource(path);
+        if (url != null) {
+            ImageIcon icon = new ImageIcon(url);
+            Image img = icon.getImage().getScaledInstance(180, 250, Image.SCALE_SMOOTH);
+            sprite.setIcon(new ImageIcon(img));
+        }
+        sprite.setHorizontalAlignment(SwingConstants.CENTER);
+
+        PremiumButton btn = new PremiumButton(name);
+        btn.setCute(true);
+        btn.addActionListener(e -> {
+            client.setTargetCharacter(key);
+            cardLayout.show(mainContainer, "LOBBY");
+        });
+
+        card.add(sprite, BorderLayout.CENTER);
+        card.add(btn, BorderLayout.SOUTH);
+        return card;
+    }
+
+    private void createLobbyPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(30, 50, 30, 50));
+
+        ModernPanel header = new ModernPanel(20);
+        header.setBackground(new Color(255, 255, 255, 200));
+        header.setPreferredSize(new Dimension(800, 80));
+        header.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 20));
+
+        targetCharLabel = new JLabel("Target: None");
+        targetCharLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
+        targetCharLabel.setForeground(new Color(150, 50, 100));
+        header.add(targetCharLabel);
+
+        panel.add(header, BorderLayout.NORTH);
+
         playerListPanel = new JPanel();
         playerListPanel.setLayout(new BoxLayout(playerListPanel, BoxLayout.Y_AXIS));
         playerListPanel.setOpaque(false);
         JScrollPane scroll = new JScrollPane(playerListPanel);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.setBorder(new EmptyBorder(20, 50, 20, 50));
-        background.add(scroll, BorderLayout.CENTER);
+        scroll.setBorder(new EmptyBorder(20, 0, 20, 0));
+        panel.add(scroll, BorderLayout.CENTER);
 
-        // ===== Actions (South) =====
-        JPanel southPanel = new JPanel(new FlowLayout());
-        southPanel.setOpaque(false);
-        southPanel.setBorder(new EmptyBorder(0, 0, 50, 0));
-
-        startButton = new PremiumButton("เริ่มเกม (เมื่อครบ 3 คน) 🚀");
+        startButton = new PremiumButton("เริ่มเกม! 💖✨");
         startButton.setCute(true);
-        startButton.setPreferredSize(new Dimension(300, 60));
+        startButton.setPreferredSize(new Dimension(300, 70));
         startButton.setEnabled(false);
-        southPanel.add(startButton);
-        background.add(southPanel, BorderLayout.SOUTH);
-
-        connectBtn.addActionListener(e -> connectToServer());
         startButton.addActionListener(e -> client.startGame());
 
-        client.setOnSyncListener(this::updatePlayerList);
-        client.setOnGameStartListener(() -> {
-            SwingUtilities.invokeLater(() -> {
-                new GameGui(client); // Modified GameGui to accept client
-                dispose();
-            });
-        });
+        JPanel south = new JPanel();
+        south.setOpaque(false);
+        south.add(startButton);
+        panel.add(south, BorderLayout.SOUTH);
 
-        setContentPane(background);
-        setVisible(true);
+        mainContainer.add(panel, "LOBBY");
     }
 
-    private void connectToServer() {
+    private void startHost() {
+        new Thread(() -> {
+            new GameServer().start();
+        }).start();
+
+        Timer timer = new Timer(500, e -> {
+            joinServer();
+            if (client.getMyId() != 0) {
+                ((Timer) e.getSource()).stop();
+                cardLayout.show(mainContainer, "CHAR_SELECT");
+            }
+        });
+        timer.start();
+    }
+
+    private void joinServer() {
         try {
             myName = nameField.getText();
             client.connect(ipField.getText(), 12345);
             client.join(myName);
-            JOptionPane.showMessageDialog(this, "Connected! 🎉");
+            if (!isHost) {
+                cardLayout.show(mainContainer, "LOBBY");
+            }
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "Failed to connect: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Failed: " + ex.getMessage());
         }
     }
 
     private void updatePlayerList(Map<Integer, GameServer.PlayerState> players) {
         SwingUtilities.invokeLater(() -> {
             playerListPanel.removeAll();
+            targetCharLabel.setText("เป้าหมายการจีบ: " + client.getTargetCharacter());
+
             for (GameServer.PlayerState p : players.values()) {
                 ModernPanel panel = new ModernPanel(20);
                 panel.setBackground(new Color(255, 255, 255, 180));
                 panel.setLayout(new BorderLayout());
-                panel.setMaximumSize(new Dimension(600, 60));
+                panel.setMaximumSize(new Dimension(700, 60));
                 panel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
-                JLabel nameLabel = new JLabel(p.name + (p.id == client.getMyId() ? " (You)" : ""));
+                JLabel nameLabel = new JLabel(p.name + (p.id == client.getMyId() ? " (คุณ)" : ""));
                 nameLabel.setFont(new Font("Tahoma", Font.BOLD, 18));
-
-                String charText = "Character: " + p.character;
-                JLabel charLabel = new JLabel(charText);
-
                 panel.add(nameLabel, BorderLayout.WEST);
-                panel.add(charLabel, BorderLayout.EAST);
 
-                // If it's me, allow character selection
-                if (p.id == client.getMyId() && p.character.equals("None")) {
-                    JComboBox<String> charBox = new JComboBox<>(new String[] { "None", "Maprang", "Kanom", "Ice" });
-                    charBox.addActionListener(e -> client.selectCharacter((String) charBox.getSelectedItem()));
-                    panel.add(charBox, BorderLayout.CENTER);
-                }
+                JLabel statusLabel = new JLabel(p.character.equals("None") ? "⏳ กำลังเลือก..." : "✅ พร้อมแล้ว");
+                statusLabel.setForeground(p.character.equals("None") ? Color.GRAY : new Color(0, 150, 0));
+                panel.add(statusLabel, BorderLayout.EAST);
 
                 playerListPanel.add(panel);
                 playerListPanel.add(Box.createVerticalStrut(10));
             }
-            startButton.setEnabled(players.size() == 3);
+
+            if (isHost) {
+                startButton.setEnabled(players.size() >= 1 && !client.getTargetCharacter().equals("None"));
+            } else {
+                startButton.setText("รอกลุ่มหัวหน้าเริ่มเกม...");
+                startButton.setEnabled(false);
+            }
+
             playerListPanel.revalidate();
             playerListPanel.repaint();
         });
@@ -146,6 +281,11 @@ public class LobbyScreen extends JFrame {
             super.paintComponent(g);
             if (backgroundImage != null) {
                 g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setPaint(new GradientPaint(0, 0, new Color(255, 182, 193, 100), 0, getHeight(),
+                        new Color(180, 150, 255, 150)));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
             }
         }
     }
