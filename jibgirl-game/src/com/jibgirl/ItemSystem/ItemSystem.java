@@ -145,10 +145,28 @@ public class ItemSystem extends JFrame {
         String character = (String) characterSelector.getSelectedItem();
         Map<String, Integer> preference = characterPreference.get(character);
 
-        // ✅ ใช้คะแนนตายตัวตามตัวละคร
-        int bonus = preference.getOrDefault(itemName, 0);
+        // Get the base price of the item
+        Integer price = shopItems.get(itemName);
+        int baseBonus = 0;
 
-        relationshipSystem.update(bonus);
+        if (price != null) {
+            // Scale bonus based on price (Max ~+20 for 100+)
+            if (price >= 100) {
+                baseBonus = 20;
+            } else if (price >= 70) {
+                baseBonus = 15;
+            } else if (price >= 45) {
+                baseBonus = 10;
+            } else {
+                baseBonus = 5;
+            }
+        }
+
+        // Add extra bonus if it's one of their preferred items
+        int prefBonus = preference.getOrDefault(itemName, 0);
+        int finalBonus = baseBonus + (prefBonus > 0 ? 5 : 0); // +5 extra for favorite items
+
+        relationshipSystem.update(finalBonus);
 
         relationshipBar.setValue(relationshipSystem.getValue());
         relationshipBar.setString("Relationship: " + relationshipSystem.getValue());
@@ -158,7 +176,7 @@ public class ItemSystem extends JFrame {
 
         JOptionPane.showMessageDialog(this,
                 "ให้ " + character +
-                        "\nRelationship +" + bonus +
+                        "\nRelationship +" + finalBonus +
                         "\nปัจจุบัน: " + relationshipSystem.getValue());
     }
 

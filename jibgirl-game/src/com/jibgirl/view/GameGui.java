@@ -43,9 +43,13 @@ public class GameGui extends JFrame {
     private JLabel timerLabel;
     private com.jibgirl.utils.QuestionTimer questionTimer;
     private int minStaminaRequired = Integer.MAX_VALUE;
-    private PremiumButton endingButton; // Button for online ranking
-    private GameResult myGameResult;
+    private String currentBackground;
+
+    // Online Multiplayer Support
     private List<GameResult> tournamentResults;
+    private GameResult myGameResult;
+    private PremiumButton endingButton;
+    private boolean isGameComplete = false;
 
     private static final Font MAIN_FONT = new Font("Tahoma", Font.BOLD, 18);
     private static final Font DIALOG_FONT = new Font("Tahoma", Font.BOLD, 22);
@@ -242,10 +246,12 @@ public class GameGui extends JFrame {
         initGui(charKey);
 
         // 2. Set up network listeners BEFORE starting game logic
-        client.setOnGameEndListener(results -> {
-            System.out.println("🏁 GAME_ENDED received! results count: " + results.size());
+        client.setOnGameEndListener((isComplete, results) -> {
+            System.out
+                    .println("🏁 GAME_ENDED received! complete: " + isComplete + ", results count: " + results.size());
             this.tournamentResults = List.copyOf(results.values());
             this.myGameResult = results.get(client.getMyId());
+            this.isGameComplete = isComplete;
 
             if (myGameResult != null) {
                 System.out.println("🏆 myId found in results. Enabling result button...");
@@ -657,17 +663,22 @@ public class GameGui extends JFrame {
      */
     private void updateEndingButton() {
         if (endingButton != null && tournamentResults != null && myGameResult != null) {
-            endingButton.setText("แสดงผลการจีบ Online ✨");
-            endingButton.setEnabled(true);
-            // Remove previous listeners if any (though there shouldn't be)
-            for (java.awt.event.ActionListener al : endingButton.getActionListeners()) {
-                endingButton.removeActionListener(al);
+            if (isGameComplete) {
+                endingButton.setText("แสดงผลการจีบ Online ✨");
+                endingButton.setEnabled(true);
+                // Remove previous listeners if any
+                for (java.awt.event.ActionListener al : endingButton.getActionListeners()) {
+                    endingButton.removeActionListener(al);
+                }
+                endingButton.addActionListener(e -> {
+                    System.out.println("🚀 Transitioning to OnlineEndingScreen via button click.");
+                    new OnlineEndingScreen(myGameResult, tournamentResults, client);
+                    dispose();
+                });
+            } else {
+                endingButton.setText("รอผู้เล่นคนอื่น... (" + tournamentResults.size() + "/3) ⏳");
+                endingButton.setEnabled(false);
             }
-            endingButton.addActionListener(e -> {
-                System.out.println("🚀 Transitioning to OnlineEndingScreen via button click.");
-                new OnlineEndingScreen(myGameResult, tournamentResults, client);
-                dispose();
-            });
             buttonPanel.revalidate();
             buttonPanel.repaint();
         }

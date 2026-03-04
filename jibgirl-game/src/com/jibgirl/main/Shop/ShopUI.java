@@ -66,7 +66,7 @@ public class ShopUI extends JFrame {
         mainPanel.add(createShopCard("ดอกทานตะวัน", "🌻", 120, balanceLabel));
         mainPanel.add(createShopCard("ดอยทิวลิป", "🌷", 150, balanceLabel));
         mainPanel.add(createShopCard("รองเท้าบาส", "👟", 500, balanceLabel));
-        mainPanel.add(createShopCard("กล้องโพลาฯ", "📸", 800, balanceLabel));
+        mainPanel.add(createShopCard("กล้องโพลาฯ", "📸", 500, balanceLabel));
 
         JScrollPane scrollPane = new JScrollPane(mainPanel);
         scrollPane.setOpaque(false);
