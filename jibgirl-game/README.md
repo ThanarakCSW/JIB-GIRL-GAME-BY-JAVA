@@ -1,2 +1,68 @@
-# JIB-GIRL GAME
+***📋 คู่มือการใช้งานระบบ Choice System (สำหรับทีม GUI)***
 
+ระบบนี้ทำหน้าที่คำนวณ Logic เบื้องหลังทั้งหมด (หักเงิน, เพิ่มความรัก, ตรวจสอบเงื่อนไข) เพื่อนฝ่าย GUI ไม่ต้องคำนวณเอง แค่ส่งค่ามาให้ระบบจัดการก็พอ
+
+***1. คลาสสำคัญที่ต้องรู้จัก (Key Models)***
+
+***Player:*** เก็บข้อมูลผู้เล่น (เงิน, ความรัก)
+
+***Dialogue:*** เก็บประโยคคำถามและรายการตัวเลือก (List<Choice>)
+
+***Choice:*** เก็บข้อมูลของปุ่มกด 1 ปุ่ม (ข้อความ, ราคา, คะแนนความรัก)
+
+***2. วิธีเริ่มใช้งาน (Setup)***
+
+ในหน้าจอเกม (GameScene) หรือตัวควบคุมหลัก ให้ประกาศตัวแปร ChoiceManager เอาไว้
+
+Java
+```
+// สร้าง Instance ของระบบจัดการตัวเลือก (สร้างแค่ครั้งเดียวตอนเริ่มเกม)
+ChoiceManager choiceManager = new ChoiceManager();
+```
+
+***3. วิธีดึงข้อมูลไปแสดงบนปุ่ม (Data Binding)***
+
+สมมติว่าคุณมี Dialogue (บทสนทนา) อยู่แล้ว และต้องการเอาข้อความไปแปะบนปุ่ม
+
+Java
+```
+// สมมติ currentDialogue คือเหตุการณ์ปัจจุบัน
+List<Choice> choices = currentDialogue.getChoices();
+
+// ตัวอย่าง: เอาข้อความจาก Choice ไปใส่ปุ่มที่ 1
+String buttonText = choices.get(0).getText(); // ได้ข้อความเช่น "ซื้อดอกไม้ (500 บาท)"
+button1.setText(buttonText);
+```
+
+***4. วิธีสั่งงานเมื่อกดปุ่ม (Event Handling) ⚡️ สำคัญมาก***
+
+เมื่อผู้เล่นกดปุ่ม ไม่ต้องเขียน if-else เช็คเงินเอง ให้เรียกใช้ฟังก์ชันนี้เลย:
+
+***รูปแบบคำสั่ง:***
+choiceManager.selectChoice(ผู้เล่น, ตัวเลือกที่ถูกกด);
+
+***ตัวอย่างโค้ดในปุ่ม (Action Listener):***
+
+Java
+```
+button1.addActionListener(e -> {
+    // 1. ดึง Object ตัวเลือกออกมา (สมมติปุ่ม 1 คือ index 0)
+    Choice selected = currentDialogue.getChoices().get(0);
+
+    // 2. ส่งให้ Logic ประมวลผล (หักเงิน/เพิ่มความรัก อัตโนมัติ)
+    choiceManager.selectChoice(player, selected);
+
+    // 3. (Optional) เช็คผลลัพธ์เพื่ออัปเดตหน้าจอ
+    // เช่น สั่งให้ refresh แถบเงิน หรือแสดงข้อความตอบกลับ
+    System.out.println(selected.getReaction()); 
+    updateMoneyBar(); // ฟังก์ชันของ GUI เองสำหรับอัปเดตหลอดเงิน
+});
+```
+
+***✅ สิ่งที่ระบบทำให้อัตโนมัติ (Do Not Repeat Yourself)***
+
+❌ ไม่ต้อง เช็คว่าเงินพอไหม (ระบบเช็คให้แล้ว ถ้าไม่พอจะมีการแจ้งเตือนใน Console/Log)
+
+❌ ไม่ต้อง สั่ง player.money -= cost เอง
+
+❌ ไม่ต้อง สั่ง player.affection += score เอง

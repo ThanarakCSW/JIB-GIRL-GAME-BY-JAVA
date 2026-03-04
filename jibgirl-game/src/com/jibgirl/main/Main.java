@@ -1,7 +1,13 @@
 package com.jibgirl.main;
 
+import com.jibgirl.view.StartScreen;
+
 public class Main {
+
     public static void main(String[] args) {
-        System.out.println("Welcome to JIB-GIRL GAME!");
+
+        // เปิดหน้าเริ่มเกม
+        new StartScreen();
+
     }
 }
