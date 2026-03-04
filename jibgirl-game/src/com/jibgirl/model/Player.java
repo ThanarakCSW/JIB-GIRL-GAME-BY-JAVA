@@ -38,6 +38,14 @@ public class Player {
         return money;
     }
 
+    /**
+     * เพิ่มเงินให้ผู้เล่น (เช่น ได้รับรายได้ประจำวัน)
+     */
+    public void addMoney(int amount) {
+        this.money += amount;
+        System.out.println("DEBUG: ได้รับเงิน " + amount + " (ปัจจุบัน: " + this.money + ")");
+    }
+
     // เพิ่มเมธอดนี้เพื่อให้ ConsoleMoneyUI เรียกชื่อได้
     public String getName() {
         return name;

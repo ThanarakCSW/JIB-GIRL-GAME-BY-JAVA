@@ -41,7 +41,8 @@ public class GameGui extends JFrame {
 
     public GameGui(String characterKey) {
         this.characterKey = characterKey;
-        this.player = new Player("เซนต์", 1000);
+        // เริ่มต้นเงิน 100 บาทตามระบบรายได้รายวัน
+        this.player = new Player("เซนต์", 100);
         this.manager = new ChoiceManager();
         this.staminaManager = new StaminaManager();
         this.inventory = new Inventory();
@@ -571,6 +572,10 @@ public class GameGui extends JFrame {
                         day++;
                         gameState = "START";
                         isShy = false; // Always reset shy on new day
+                        // restore stamina and give daily income
+                        staminaManager.restoreStamina();
+                        player.addMoney(100);
+                        System.out.println("🎁 ได้รับรายได้ 100 บาท (เงินตอนนี้: " + player.getMoney() + ")");
                     } else if (nextState.equals("FINAL")) {
                         day = 6;
                         gameState = "ENDED";
