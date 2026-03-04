@@ -15,7 +15,7 @@ public class GameClient {
     private Consumer<Map<Integer, GameServer.PlayerState>> onSyncListener;
     private Consumer<Integer> onWelcomeListener;
     private Runnable onGameStartListener;
-    private Consumer<Map<Integer, GameResult>> onGameEndListener;
+    private java.util.function.BiConsumer<Boolean, Map<Integer, GameResult>> onGameEndListener;
     private String targetCharacter = "None";
 
     public void connect(String host, int port) throws IOException {
@@ -62,7 +62,17 @@ public class GameClient {
             if (onGameStartListener != null)
                 onGameStartListener.run();
         } else if (message.startsWith("GAME_ENDED:")) {
-            String data = message.substring(11);
+            String data = message.substring(11); // Skip "GAME_ENDED:"
+            boolean isComplete = false;
+
+            if (data.startsWith("COMPLETE:")) {
+                isComplete = true;
+                data = data.substring(9);
+            } else if (data.startsWith("WAITING:")) {
+                isComplete = false;
+                data = data.substring(8);
+            }
+
             gameResults.clear();
             if (!data.isEmpty()) {
                 String[] resultStrings = data.split(";");
@@ -76,8 +86,9 @@ public class GameClient {
                 }
             }
             if (onGameEndListener != null) {
-                System.out.println("📡 Dispatching onGameEndListener with " + gameResults.size() + " results.");
-                onGameEndListener.accept(gameResults);
+                System.out.println(
+                        "📡 Dispatching onGameEndListener: complete=" + isComplete + ", count=" + gameResults.size());
+                onGameEndListener.accept(isComplete, gameResults);
             }
         }
     }
@@ -133,7 +144,7 @@ public class GameClient {
         this.onGameStartListener = listener;
     }
 
-    public void setOnGameEndListener(Consumer<Map<Integer, GameResult>> listener) {
+    public void setOnGameEndListener(java.util.function.BiConsumer<Boolean, Map<Integer, GameResult>> listener) {
         this.onGameEndListener = listener;
     }
 

@@ -18,6 +18,7 @@ public class ModernInventoryUI extends JFrame {
     private GameGui parentGui;
     private JPanel mainPanel;
     private static final Map<String, String> ITEM_ICONS = new HashMap<>();
+    private static final Map<String, Integer> ITEM_PRICES = new HashMap<>();
 
     static {
         ITEM_ICONS.put("ชุดพู่กัน", "🖌️");
@@ -29,6 +30,16 @@ public class ModernInventoryUI extends JFrame {
         ITEM_ICONS.put("ดอยทิวลิป", "🌷");
         ITEM_ICONS.put("รองเท้าบาส", "👟");
         ITEM_ICONS.put("กล้องโพลาฯ", "📸");
+
+        ITEM_PRICES.put("ชุดพู่กัน", 150);
+        ITEM_PRICES.put("สมุดสเก็ตช์", 80);
+        ITEM_PRICES.put("สีน้ำพรีเมียม", 250);
+        ITEM_PRICES.put("โกโก้ร้อน", 45);
+        ITEM_PRICES.put("ชานมไข่มุก", 60);
+        ITEM_PRICES.put("ดอกทานตะวัน", 120);
+        ITEM_PRICES.put("ดอยทิวลิป", 150);
+        ITEM_PRICES.put("รองเท้าบาส", 500);
+        ITEM_PRICES.put("กล้องโพลาฯ", 800);
     }
 
     public ModernInventoryUI(Inventory inventory, Player player, GameGui parentGui) {
@@ -118,10 +129,22 @@ public class ModernInventoryUI extends JFrame {
         useBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         useBtn.addActionListener(e -> {
             inventory.removeItem(name);
-            player.addAffection(15);
+
+            // Calculate bonus based on price scaling
+            int price = ITEM_PRICES.getOrDefault(name, 0);
+            int bonus = 10; // Default for < 50
+            if (price >= 500) {
+                bonus = 30;
+            } else if (price >= 100) { // Will cover 100-150 and up to 499
+                bonus = 20;
+            } else if (price >= 50) { // Covers 50-99
+                bonus = 15;
+            }
+
+            player.addAffection(bonus);
             if (parentGui != null)
                 parentGui.refreshStatus();
-            JOptionPane.showMessageDialog(this, "คุณมอบ " + name + " ให้เธอ! ❤️\nความรักเพิ่มขึ้น +15", "Kawaii!",
+            JOptionPane.showMessageDialog(this, "คุณมอบ " + name + " ให้เธอ! ❤️\nความรักเพิ่มขึ้น +" + bonus, "Kawaii!",
                     JOptionPane.INFORMATION_MESSAGE);
             refreshInventory();
         });
