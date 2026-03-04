@@ -10,7 +10,9 @@ public class GameServer {
     private static final int MAX_PLAYERS = 3;
     private final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
     private final Map<Integer, PlayerState> playerStates = new ConcurrentHashMap<>();
+    private final Map<Integer, GameResult> finishedPlayers = new ConcurrentHashMap<>();
     private int idCounter = 0;
+    private volatile boolean gameEnded = false;
 
     public void start() {
         System.out.println("✨ Jib Girl Game Server started on port " + PORT);
@@ -46,6 +48,15 @@ public class GameServer {
         StringBuilder sb = new StringBuilder("SYNC:");
         for (PlayerState state : playerStates.values()) {
             sb.append(state.toString()).append(";");
+        }
+        broadcast(sb.toString());
+    }
+
+    private synchronized void broadcastGameEnded() {
+        StringBuilder sb = new StringBuilder("GAME_ENDED:");
+        List<GameResult> results = new ArrayList<>(finishedPlayers.values());
+        for (GameResult result : results) {
+            sb.append(result.toString()).append(";");
         }
         broadcast(sb.toString());
     }
@@ -92,6 +103,28 @@ public class GameServer {
                         }
                     } else if (input.equals("START_GAME")) {
                         broadcast("GAME_STARTED");
+                    } else if (input.startsWith("FINISH_GAME:")) {
+                        // Player finished: FINISH_GAME:affection:stamina:character
+                        String[] parts = input.substring(12).split(":");
+                        if (parts.length >= 3) {
+                            int affection = Integer.parseInt(parts[0]);
+                            int stamina = Integer.parseInt(parts[1]);
+                            String character = parts[2];
+
+                            PlayerState state = playerStates.get(playerId);
+                            if (state != null) {
+                                GameResult result = new GameResult(playerId, state.name, character, affection, stamina);
+                                finishedPlayers.put(playerId, result);
+                                System.out.println(
+                                        "🎮 Player " + playerId + " finished with score: " + result.getFinalScore());
+
+                                // Check if all players finished
+                                if (finishedPlayers.size() >= playerStates.size()) {
+                                    gameEnded = true;
+                                    broadcastGameEnded();
+                                }
+                            }
+                        }
                     }
                 }
             } catch (IOException e) {

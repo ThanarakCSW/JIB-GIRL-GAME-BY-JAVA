@@ -11,9 +11,11 @@ public class GameClient {
     private BufferedReader in;
     private int myId;
     private final Map<Integer, GameServer.PlayerState> allPlayers = new HashMap<>();
+    private final Map<Integer, GameResult> gameResults = new HashMap<>();
     private Consumer<Map<Integer, GameServer.PlayerState>> onSyncListener;
     private Consumer<Integer> onWelcomeListener;
     private Runnable onGameStartListener;
+    private Consumer<Map<Integer, GameResult>> onGameEndListener;
 
     public void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
@@ -54,6 +56,22 @@ public class GameClient {
         } else if (message.equals("GAME_STARTED")) {
             if (onGameStartListener != null)
                 onGameStartListener.run();
+        } else if (message.startsWith("GAME_ENDED:")) {
+            String data = message.substring(11);
+            gameResults.clear();
+            if (!data.isEmpty()) {
+                String[] resultStrings = data.split(";");
+                for (String resultStr : resultStrings) {
+                    if (!resultStr.trim().isEmpty()) {
+                        GameResult result = GameResult.fromString(resultStr);
+                        if (result != null) {
+                            gameResults.put(result.getPlayerId(), result);
+                        }
+                    }
+                }
+            }
+            if (onGameEndListener != null)
+                onGameEndListener.accept(gameResults);
         }
     }
 
@@ -77,6 +95,11 @@ public class GameClient {
             out.println("START_GAME");
     }
 
+    public void finishGame(int affection, int stamina, String character) {
+        if (out != null)
+            out.println("FINISH_GAME:" + affection + ":" + stamina + ":" + character);
+    }
+
     public void setOnSyncListener(Consumer<Map<Integer, GameServer.PlayerState>> listener) {
         this.onSyncListener = listener;
     }
@@ -89,11 +112,23 @@ public class GameClient {
         this.onGameStartListener = listener;
     }
 
+    public void setOnGameEndListener(Consumer<Map<Integer, GameResult>> listener) {
+        this.onGameEndListener = listener;
+    }
+
     public int getMyId() {
         return myId;
     }
 
     public Map<Integer, GameServer.PlayerState> getAllPlayers() {
         return allPlayers;
+    }
+
+    public Map<Integer, GameResult> getGameResults() {
+        return gameResults;
+    }
+
+    public GameResult getMyResult() {
+        return gameResults.get(myId);
     }
 }

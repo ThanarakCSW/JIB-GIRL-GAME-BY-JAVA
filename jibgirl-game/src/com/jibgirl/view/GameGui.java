@@ -9,28 +9,25 @@ import com.jibgirl.model.Choice;
 import com.jibgirl.model.Dialogue;
 import com.jibgirl.model.Player;
 import com.jibgirl.model.Scene;
-import java.util.Map;
 import com.jibgirl.network.GameClient;
+import com.jibgirl.network.GameResult;
 import com.jibgirl.network.GameServer;
-import com.jibgirl.network.GameServer.PlayerState;
 import com.jibgirl.utils.UIUtils;
 import com.jibgirl.utils.UIUtils.ModernPanel;
 import com.jibgirl.utils.UIUtils.NeonProgressBar;
 import com.jibgirl.utils.UIUtils.PremiumButton;
 import java.awt.*;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class GameGui extends JFrame {
 
-    private GameClient client;
-    private boolean isMultiplayer = false;
-    private JPanel multiplayerPanel;
-
     private Player player;
     private Dialogue currentScene;
     private ChoiceManager manager;
     private StaminaManager staminaManager;
+    private GameClient client; // set when playing in multiplayer
     private Inventory inventory;
     private String characterKey;
     private int day = 1;
@@ -43,29 +40,25 @@ public class GameGui extends JFrame {
     private JTextArea dialogueArea;
     private JPanel buttonPanel;
     private JLabel dayLabel;
+    private JLabel timerLabel;
+    private com.jibgirl.utils.QuestionTimer questionTimer;
 
     private static final Font MAIN_FONT = new Font("Tahoma", Font.BOLD, 18);
     private static final Font DIALOG_FONT = new Font("Tahoma", Font.BOLD, 22);
 
     public GameGui(String characterKey) {
-        this(characterKey, null);
-    }
-
-    public GameGui(GameClient client) {
-        this(client.getAllPlayers().get(client.getMyId()).character, client);
-    }
-
-    private GameGui(String characterKey, GameClient client) {
         this.characterKey = characterKey;
-        this.client = client;
-        this.isMultiplayer = (client != null);
-        this.player = new Player("เซนต์", 1000);
+        // เริ่มต้นเงิน 100 บาทตามระบบรายได้รายวัน
+        this.player = new Player("เซนต์", 100);
         this.manager = new ChoiceManager();
         this.staminaManager = new StaminaManager();
         this.inventory = new Inventory();
 
-        setTitle("💖 Jib Girl Game - " + (isMultiplayer ? "Multiplayer" : "Cute Edition") + " 💖");
-        setSize(isMultiplayer ? 1300 : 1200, 900); // Slightly wider for multiplayer panel
+        // multiplayer client is null in this constructor
+        this.client = null;
+
+        setTitle("💖 Jib Girl Game - Cute Edition 💖");
+        setSize(1200, 900);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -73,11 +66,6 @@ public class GameGui extends JFrame {
         BackgroundPanel bgPanel = new BackgroundPanel("/com/jibgirl/asset/bg.jpg");
         setContentPane(bgPanel);
         getContentPane().setLayout(new BorderLayout());
-
-        if (isMultiplayer) {
-            setupMultiplayerPanel();
-            client.setOnSyncListener(this::updateMultiplayerStatus);
-        }
 
         // ======================
         // NORTH PANEL (Header)
@@ -163,6 +151,13 @@ public class GameGui extends JFrame {
         rightPanel.add(dayContainer);
         rightPanel.add(Box.createVerticalStrut(10));
         rightPanel.add(invBtn);
+        rightPanel.add(Box.createVerticalStrut(10));
+        timerLabel = new JLabel("⏱️ 30", SwingConstants.CENTER);
+        timerLabel.setForeground(new Color(80, 50, 100));
+        timerLabel.setFont(MAIN_FONT);
+        // only show timer in multiplayer mode
+        timerLabel.setVisible(client != null);
+        rightPanel.add(timerLabel);
         statusHeader.add(rightPanel, BorderLayout.EAST);
 
         northPanel.add(statusHeader, BorderLayout.CENTER);
@@ -222,7 +217,34 @@ public class GameGui extends JFrame {
         getContentPane().add(southPanel, BorderLayout.SOUTH);
 
         loadScene();
+        if (client != null) {
+            startQuestionTimer();
+        }
         setVisible(true);
+    }
+
+    /**
+     * Multiplayer constructor - initializes GUI based on provided GameClient.
+     * The characterKey is retrieved from the client's own PlayerState.
+     */
+    public GameGui(GameClient client) {
+        // derive character key from current player state
+        GameServer.PlayerState ps = client.getAllPlayers().get(client.getMyId());
+        String charKey = ps != null ? ps.character : "None";
+        // call local constructor to build GUI
+        this(charKey);
+        // save client reference
+        this.client = client;
+        // listen for game-end broadcast and display results
+        client.setOnGameEndListener(results -> {
+            GameResult myRes = results.get(client.getMyId());
+            if (myRes != null) {
+                SwingUtilities.invokeLater(() -> {
+                    new OnlineEndingScreen(myRes, List.copyOf(results.values()));
+                    dispose();
+                });
+            }
+        });
     }
 
     public void setBackgroundImage(String fileName) {
@@ -237,60 +259,6 @@ public class GameGui extends JFrame {
         }
     }
 
-    private void setupMultiplayerPanel() {
-        multiplayerPanel = new JPanel();
-        multiplayerPanel.setLayout(new BoxLayout(multiplayerPanel, BoxLayout.Y_AXIS));
-        multiplayerPanel.setOpaque(false);
-        multiplayerPanel.setPreferredSize(new Dimension(200, 0));
-        multiplayerPanel.setBorder(new EmptyBorder(20, 10, 20, 10));
-
-        JLabel title = new JLabel("🌍 World Status", SwingConstants.CENTER);
-        title.setFont(new Font("Tahoma", Font.BOLD, 16));
-        title.setForeground(Color.WHITE);
-        multiplayerPanel.add(title);
-        multiplayerPanel.add(Box.createVerticalStrut(10));
-
-        getContentPane().add(multiplayerPanel, BorderLayout.WEST);
-    }
-
-    private void updateMultiplayerStatus(Map<Integer, GameServer.PlayerState> players) {
-        SwingUtilities.invokeLater(() -> {
-            multiplayerPanel.removeAll();
-            JLabel title = new JLabel("🌍 World Status", SwingConstants.CENTER);
-            title.setFont(new Font("Tahoma", Font.BOLD, 16));
-            title.setForeground(Color.WHITE);
-            multiplayerPanel.add(title);
-            multiplayerPanel.add(Box.createVerticalStrut(10));
-
-            for (GameServer.PlayerState p : players.values()) {
-                if (client != null && p.id == client.getMyId())
-                    continue;
-
-                ModernPanel pPanel = new ModernPanel(15);
-                pPanel.setBackground(new Color(255, 255, 255, 150));
-                pPanel.setLayout(new GridLayout(3, 1));
-                pPanel.setPreferredSize(new Dimension(180, 80));
-                pPanel.setMaximumSize(new Dimension(180, 80));
-
-                JLabel name = new JLabel("👤 " + p.name);
-                name.setFont(new Font("Tahoma", Font.BOLD, 12));
-                JLabel charInfo = new JLabel("💕 " + p.character);
-                charInfo.setFont(new Font("Tahoma", Font.PLAIN, 11));
-                JLabel progress = new JLabel("📅 Day " + p.day + " | ❤️ " + p.affection);
-                progress.setFont(new Font("Tahoma", Font.PLAIN, 11));
-
-                pPanel.add(name);
-                pPanel.add(charInfo);
-                pPanel.add(progress);
-
-                multiplayerPanel.add(pPanel);
-                multiplayerPanel.add(Box.createVerticalStrut(5));
-            }
-            multiplayerPanel.revalidate();
-            multiplayerPanel.repaint();
-        });
-    }
-
     public void refreshStatus() {
         updateUI();
     }
@@ -299,6 +267,8 @@ public class GameGui extends JFrame {
      * Trigger the confession scene when stamina is depleted
      */
     private void triggerConfessionScene() {
+        if (questionTimer != null)
+            questionTimer.stop();
         isShy = true; // Always shy during confession
         setBackgroundImage("/com/jibgirl/asset/classroom.png"); // Confession is always in Classroom
         buttonPanel.removeAll();
@@ -335,6 +305,8 @@ public class GameGui extends JFrame {
     }
 
     private void triggerBadEnd() {
+        if (questionTimer != null)
+            questionTimer.stop();
         setBackgroundImage("/com/jibgirl/asset/start.jpg"); // Return to home theme or similar
         buttonPanel.removeAll();
         Scene badEndScene = SceneFactory.createBadEndScene(characterKey);
@@ -559,6 +531,9 @@ public class GameGui extends JFrame {
     }
 
     private void showEnding() {
+        if (questionTimer != null) {
+            questionTimer.stop();
+        }
         int score = player.getAffection();
         String endingText;
 
@@ -586,6 +561,10 @@ public class GameGui extends JFrame {
         }
 
         dialogueArea.setText(endingText);
+        // notify server if playing online
+        if (client != null) {
+            client.finishGame(player.getAffection(), staminaManager.getStamina(), characterKey);
+        }
         PremiumButton exitBtn = new PremiumButton("BACK TO MAIN MENU 🏠✨");
         exitBtn.setCute(true);
         exitBtn.setPreferredSize(new Dimension(250, 60));
@@ -594,6 +573,51 @@ public class GameGui extends JFrame {
             dispose();
         });
         buttonPanel.add(exitBtn);
+    }
+
+    /**
+     * Initialize and start the per-question countdown timer for multiplayer mode.
+     * This will update the timerLabel and handle expiration automatically.
+     */
+    private void startQuestionTimer() {
+        if (questionTimer == null) {
+            questionTimer = new com.jibgirl.utils.QuestionTimer();
+            questionTimer.setOnTick(sec -> SwingUtilities.invokeLater(() -> {
+                timerLabel.setText("⏱️ " + sec);
+                if (questionTimer.isCritical()) {
+                    timerLabel.setForeground(Color.RED);
+                } else {
+                    timerLabel.setForeground(new Color(80, 50, 100));
+                }
+            }));
+            questionTimer.setOnTimeUp(() -> SwingUtilities.invokeLater(() -> {
+                // disable choice buttons and progress
+                for (Component comp : buttonPanel.getComponents()) {
+                    if (comp instanceof JButton) {
+                        comp.setEnabled(false);
+                    }
+                }
+                JOptionPane.showMessageDialog(this,
+                        "เวลาหมด!", "TIME UP", JOptionPane.WARNING_MESSAGE);
+                if (day < 5) {
+                    day++;
+                    gameState = "START";
+                    isShy = false;
+                    staminaManager.restoreStamina();
+                    player.addMoney(100);
+                    loadScene();
+                } else {
+                    day = 6;
+                    gameState = "ENDED";
+                    showEnding();
+                }
+                if (client != null) {
+                    client.updateProgress(day, player.getAffection());
+                }
+            }));
+        }
+        questionTimer.reset();
+        questionTimer.start();
     }
 
     private void addChoice(String text, int affect, int cost, String nextState) {
@@ -620,6 +644,9 @@ public class GameGui extends JFrame {
         }
 
         btn.addActionListener(e -> {
+            // stop the countdown regardless
+            if (questionTimer != null)
+                questionTimer.stop();
             // Try to execute choice
             boolean success = manager.selectChoice(player, c, staminaManager);
 
@@ -648,6 +675,10 @@ public class GameGui extends JFrame {
                         day++;
                         gameState = "START";
                         isShy = false; // Always reset shy on new day
+                        // restore stamina and give daily income
+                        staminaManager.restoreStamina();
+                        player.addMoney(100);
+                        System.out.println("🎁 ได้รับรายได้ 100 บาท (เงินตอนนี้: " + player.getMoney() + ")");
                     } else if (nextState.equals("FINAL")) {
                         day = 6;
                         gameState = "ENDED";
@@ -655,6 +686,10 @@ public class GameGui extends JFrame {
                         gameState = nextState;
                     }
                     loadScene();
+                    if (client != null) {
+                        client.updateProgress(day, player.getAffection());
+                        startQuestionTimer();
+                    }
                 }
             } else {
                 // Choice failed - show warning
@@ -918,22 +953,16 @@ public class GameGui extends JFrame {
     }
 
     private void updateUI() {
-        if (dayLabel != null)
-            dayLabel.setText("DAY " + day);
-        if (moneyLabel != null)
-            moneyLabel.setText("💰 " + String.format("%,d", player.getMoney()));
-        if (affectionBar != null)
-            affectionBar.setValue(player.getAffection());
-        if (staminaBar != null)
-            staminaBar.setValue(staminaManager.getStamina());
+        dayLabel.setText("DAY " + day);
+        moneyLabel.setText("💰 " + String.format("%,d", player.getMoney()));
+        affectionBar.setValue(player.getAffection());
 
-        if (dialogueArea != null && currentScene != null) {
-            dialogueArea.setText(currentScene.getQuestion());
-        }
+        // Update stamina bar with warning colors
+        staminaBar.setValue(staminaManager.getStamina());
 
-        if (isMultiplayer && client != null) {
-            client.updateProgress(day, player.getAffection());
-        }
+        // Color is handled by setStamina(true) and NeonProgressBar gradient
+
+        dialogueArea.setText(currentScene.getQuestion());
     }
 
     private class BackgroundPanel extends JPanel {
