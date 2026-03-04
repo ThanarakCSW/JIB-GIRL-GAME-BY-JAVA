@@ -106,6 +106,7 @@ public class GameServer {
                                     ch.sendMessage("ERROR:Reconnecting...");
                                     clients.remove(ch);
                                     playerStates.remove(ch.playerId);
+                                    finishedPlayers.remove(ch.playerId); // [FIX] Remove stale results too
                                     try {
                                         ch.socket.close();
                                     } catch (IOException e) {
@@ -207,7 +208,8 @@ public class GameServer {
 
     private boolean isNameTaken(String name) {
         for (PlayerState ps : playerStates.values()) {
-            if (ps.name.equalsIgnoreCase(name)) return true;
+            if (ps.name.equalsIgnoreCase(name))
+                return true;
         }
         return false;
     }
