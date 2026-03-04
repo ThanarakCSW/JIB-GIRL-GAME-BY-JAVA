@@ -42,6 +42,7 @@ public class GameGui extends JFrame {
     private JLabel dayLabel;
     private JLabel timerLabel;
     private com.jibgirl.utils.QuestionTimer questionTimer;
+    private int minStaminaRequired = Integer.MAX_VALUE;
 
     private static final Font MAIN_FONT = new Font("Tahoma", Font.BOLD, 18);
     private static final Font DIALOG_FONT = new Font("Tahoma", Font.BOLD, 22);
@@ -156,7 +157,7 @@ public class GameGui extends JFrame {
         timerLabel.setForeground(new Color(80, 50, 100));
         timerLabel.setFont(MAIN_FONT);
         // only show timer in multiplayer mode
-        timerLabel.setVisible(client != null);
+        timerLabel.setVisible(true); // Always show timer as requested
         rightPanel.add(timerLabel);
         statusHeader.add(rightPanel, BorderLayout.EAST);
 
@@ -217,9 +218,7 @@ public class GameGui extends JFrame {
         getContentPane().add(southPanel, BorderLayout.SOUTH);
 
         loadScene();
-        if (client != null) {
-            startQuestionTimer();
-        }
+        startQuestionTimer();
         setVisible(true);
     }
 
@@ -294,6 +293,11 @@ public class GameGui extends JFrame {
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
             btn.addActionListener(e -> {
+                // Disable buttons to avoid multiple clicks
+                for (Component comp : buttonPanel.getComponents()) {
+                    if (comp instanceof JButton)
+                        comp.setEnabled(false);
+                }
                 manager.selectChoice(player, choice, staminaManager);
                 // After confession, show ending
                 gameState = "ENDED";
@@ -347,6 +351,8 @@ public class GameGui extends JFrame {
 
     private void loadScene() {
         buttonPanel.removeAll();
+        minStaminaRequired = Integer.MAX_VALUE;
+
         // Set character image - use shy if isShy is true, otherwise normal
         String charPrefix = characterKey.toLowerCase();
         String expression = isShy ? "_shy.png" : "_normal.png";
@@ -363,6 +369,28 @@ public class GameGui extends JFrame {
         }
         buttonPanel.revalidate();
         buttonPanel.repaint();
+        verifyStaminaAvailability();
+    }
+
+    /**
+     * Verify if the player has enough stamina to select at least one choice.
+     * If not, trigger the ending sequence.
+     */
+    private void verifyStaminaAvailability() {
+        // Skip check if no choices were added or if it's already the end/day 5
+        if (minStaminaRequired == Integer.MAX_VALUE || day >= 5 || gameState.equals("ENDED")) {
+            return;
+        }
+
+        if (!staminaManager.hasEnoughStamina(minStaminaRequired)) {
+            System.out.println("⚠️ Stamina insufficiency detected (" + staminaManager.getStamina() +
+                    " < " + minStaminaRequired + "). Transitioning to ending...");
+            if (player.getAffection() < 50) {
+                triggerBadEnd();
+            } else {
+                triggerConfessionScene();
+            }
+        }
     }
 
     private void loadMaprangRoute() {
@@ -539,6 +567,7 @@ public class GameGui extends JFrame {
         if (questionTimer != null) {
             questionTimer.stop();
         }
+        buttonPanel.removeAll();
         int score = player.getAffection();
         String endingText;
 
@@ -578,6 +607,8 @@ public class GameGui extends JFrame {
             dispose();
         });
         buttonPanel.add(exitBtn);
+        buttonPanel.revalidate();
+        buttonPanel.repaint();
     }
 
     /**
@@ -596,6 +627,8 @@ public class GameGui extends JFrame {
                 }
             }));
             questionTimer.setOnTimeUp(() -> SwingUtilities.invokeLater(() -> {
+                if (!questionTimer.isTimeUp())
+                    return;
                 // disable choice buttons and progress
                 for (Component comp : buttonPanel.getComponents()) {
                     if (comp instanceof JButton) {
@@ -610,6 +643,7 @@ public class GameGui extends JFrame {
                     isShy = false;
                     player.addMoney(100);
                     loadScene();
+                    startQuestionTimer();
                 } else {
                     day = 6;
                     gameState = "ENDED";
@@ -644,18 +678,23 @@ public class GameGui extends JFrame {
 
             switch (choiceIndex) {
                 case 0:
-                    fixedStaminaCost = 20;
+                    fixedStaminaCost = 25;
                     break;
                 case 1:
-                    fixedStaminaCost = 15;
+                    fixedStaminaCost = 20;
                     break;
                 case 2:
-                    fixedStaminaCost = 10;
+                    fixedStaminaCost = 15;
                     break;
                 default:
                     fixedStaminaCost = 5;
                     break;
             }
+        }
+
+        // Update minimum stamina required for this scene
+        if (fixedStaminaCost > 0 && fixedStaminaCost < minStaminaRequired) {
+            minStaminaRequired = fixedStaminaCost;
         }
 
         Choice c = new Choice(text, affect, cost, "", fixedStaminaCost);
@@ -676,6 +715,12 @@ public class GameGui extends JFrame {
         }
 
         btn.addActionListener(e -> {
+            // Disable all buttons to prevent multiple clicks during transition
+            for (Component comp : buttonPanel.getComponents()) {
+                if (comp instanceof JButton)
+                    comp.setEnabled(false);
+            }
+
             // stop the countdown regardless
             if (questionTimer != null)
                 questionTimer.stop();
@@ -717,9 +762,9 @@ public class GameGui extends JFrame {
                         gameState = nextState;
                     }
                     loadScene();
+                    startQuestionTimer();
                     if (client != null) {
                         client.updateProgress(day, player.getAffection(), staminaManager.getStamina());
-                        startQuestionTimer();
                     }
                 }
             } else {

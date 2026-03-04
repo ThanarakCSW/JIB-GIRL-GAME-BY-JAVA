@@ -113,6 +113,9 @@ public class GameServer {
                             broadcastSync();
                         }
                     } else if (input.equals("START_GAME")) {
+                        // Reset game state for a new round
+                        finishedPlayers.clear();
+                        gameEnded = false;
                         broadcast("GAME_STARTED");
                     } else if (input.startsWith("FINISH_GAME:")) {
                         // Player finished: FINISH_GAME:affection:stamina:character

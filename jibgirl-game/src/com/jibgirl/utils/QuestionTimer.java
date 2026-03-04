@@ -26,6 +26,7 @@ public class QuestionTimer {
      * Start the countdown timer
      */
     public void start() {
+        stop();
         secondsRemaining = QUESTION_TIME_SECONDS;
         timer = new Timer(1000, e -> {
             secondsRemaining--;

@@ -142,6 +142,22 @@ public class GameClient {
         return gameResults;
     }
 
+    public void disconnect() {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            out = null;
+            in = null;
+            socket = null;
+            allPlayers.clear();
+            gameResults.clear();
+        }
+    }
+
     public GameResult getMyResult() {
         return gameResults.get(myId);
     }

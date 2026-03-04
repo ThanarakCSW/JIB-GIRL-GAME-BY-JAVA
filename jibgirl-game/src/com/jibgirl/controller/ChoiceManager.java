@@ -25,13 +25,12 @@ public class ChoiceManager {
             return false;
         }
 
-        // 2. [REMOVED] Strict stamina check - allow hitting 0 to trigger game end
-        // events
-        /*
-         * if (!staminaManager.hasEnoughStamina(choice.getStaminaCost())) {
-         * ...
-         * }
-         */
+        // 2. Strict stamina check
+        if (!staminaManager.hasEnoughStamina(choice.getStaminaCost())) {
+            System.out.println(
+                    "❌ สมดุลชีวิตไม่พอครับ! (ขาดอีก " + (choice.getStaminaCost() - staminaManager.getStamina()) + "%)");
+            return false;
+        }
 
         // 3. ทั้งสองอย่างพอ -> หักเงินและสมดุลชีวิต
         player.spendMoney(choice.getCost());

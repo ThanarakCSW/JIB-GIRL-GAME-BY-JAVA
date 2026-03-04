@@ -107,6 +107,17 @@ public class LobbyScreen extends JFrame {
         container.add(hostBtn);
         container.add(Box.createVerticalStrut(10));
         container.add(joinBtn);
+        container.add(Box.createVerticalStrut(10));
+
+        PremiumButton backBtn = new PremiumButton("กลับไปหน้าหลัก ⬅️");
+        backBtn.setCute(false);
+        backBtn.setMaximumSize(new Dimension(300, 60));
+        backBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        backBtn.addActionListener(e -> {
+            new StartScreen();
+            dispose();
+        });
+        container.add(backBtn);
 
         panel.add(container);
         mainContainer.add(panel, "MODE");
@@ -130,6 +141,21 @@ public class LobbyScreen extends JFrame {
         grid.add(createCharCard("Ice", "ไอซ์ 🏀"));
 
         panel.add(grid, BorderLayout.CENTER);
+
+        JPanel southPanel = new JPanel();
+        southPanel.setOpaque(false);
+        southPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
+
+        PremiumButton backBtn = new PremiumButton("⬅️ กลับ");
+        backBtn.setCute(false);
+        backBtn.setPreferredSize(new Dimension(150, 50));
+        backBtn.addActionListener(e -> {
+            cardLayout.show(mainContainer, "MODE");
+            isHost = false;
+        });
+        southPanel.add(backBtn);
+        panel.add(southPanel, BorderLayout.SOUTH);
+
         mainContainer.add(panel, "CHAR_SELECT");
     }
 
@@ -192,8 +218,20 @@ public class LobbyScreen extends JFrame {
         startButton.setEnabled(false);
         startButton.addActionListener(e -> client.startGame());
 
-        JPanel south = new JPanel();
+        JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         south.setOpaque(false);
+
+        PremiumButton exitBtn = new PremiumButton("ออกจากห้อง 🚪");
+        exitBtn.setCute(false);
+        exitBtn.setChoiceStyle(true); // Red style
+        exitBtn.setPreferredSize(new Dimension(200, 70));
+        exitBtn.addActionListener(e -> {
+            client.disconnect();
+            cardLayout.show(mainContainer, "MODE");
+            isHost = false; // Reset host status
+        });
+
+        south.add(exitBtn);
         south.add(startButton);
         panel.add(south, BorderLayout.SOUTH);
 
@@ -226,6 +264,14 @@ public class LobbyScreen extends JFrame {
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Failed: " + ex.getMessage());
         }
+    }
+
+    @Override
+    public void dispose() {
+        if (client != null) {
+            client.disconnect();
+        }
+        super.dispose();
     }
 
     private void updatePlayerList(Map<Integer, GameServer.PlayerState> players) {
