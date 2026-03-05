@@ -24,6 +24,25 @@ public class UIUtils {
     public static final Color PASTEL_YELLOW = new Color(255, 245, 157);
     public static final Color BORDER_SOFT = new Color(255, 255, 255, 150);
 
+    /**
+     * Provides a font that balances cross-platform Thai support and Emoji support.
+     * On Mac, we use SansSerif which has excellent Emoji fallback.
+     * On Windows, we use Dialog which is a composite font in Java that handles
+     * Thai and common symbols/emojis more reliably across different JVMs.
+     */
+    public static Font getBalancedFont(int style, int size) {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            // "Dialog" is a composite font on Windows that handles Thai well.
+            // Alternatively, "Segoe UI" is the modern Windows system font with emoji
+            // support.
+            return new Font("Dialog", style, size);
+        } else if (os.contains("mac")) {
+            return new Font(Font.SANS_SERIF, style, size);
+        }
+        return new Font(Font.DIALOG, style, size);
+    }
+
     public static class ModernPanel extends JPanel {
         private int round = 40;
         private Color bgColor = GLASS_WHITE;
@@ -117,7 +136,7 @@ public class UIUtils {
             setBorderPainted(false);
             setFocusPainted(false);
             setForeground(Color.WHITE);
-            setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+            setFont(getBalancedFont(Font.BOLD, 16));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             addMouseListener(new MouseAdapter() {
@@ -246,7 +265,7 @@ public class UIUtils {
 
             // Percentage Text
             String text = getValue() + "%";
-            g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+            g2.setFont(getBalancedFont(Font.BOLD, 12));
             FontMetrics metrics = g2.getFontMetrics();
             int tx = (width - metrics.stringWidth(text)) / 2;
             int ty = ((height - metrics.getHeight()) / 2) + metrics.getAscent();
