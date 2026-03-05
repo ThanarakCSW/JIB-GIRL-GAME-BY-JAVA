@@ -78,16 +78,16 @@ public class LobbyScreen extends JFrame {
         container.setBorder(new EmptyBorder(40, 40, 40, 40));
 
         JLabel title = new JLabel("✨ โหมดออนไลน์ ✨", SwingConstants.CENTER);
-        title.setFont(new Font("Tahoma", Font.BOLD, 32));
+        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 32));
         title.setForeground(new Color(100, 50, 50));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         nameField = new JTextField("Player");
-        nameField.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        nameField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
         nameField.setMaximumSize(new Dimension(300, 50));
 
         ipField = new JTextField("localhost");
-        ipField.setFont(new Font("Tahoma", Font.PLAIN, 20));
+        ipField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
         ipField.setMaximumSize(new Dimension(300, 50));
 
         PremiumButton hostBtn = new PremiumButton("สร้างห้องใหม่ (Host) 🏠");
@@ -141,7 +141,7 @@ public class LobbyScreen extends JFrame {
         panel.setBorder(new EmptyBorder(50, 50, 50, 50));
 
         JLabel title = new JLabel("✨ เลือกตัวละครที่จะจีบ (Host Only) ✨", SwingConstants.CENTER);
-        title.setFont(new Font("Tahoma", Font.BOLD, 32));
+        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 32));
         title.setForeground(Color.WHITE);
         panel.add(title, BorderLayout.NORTH);
 
@@ -209,7 +209,7 @@ public class LobbyScreen extends JFrame {
         header.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 20));
 
         targetCharLabel = new JLabel("Target: None");
-        targetCharLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
+        targetCharLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
         targetCharLabel.setForeground(new Color(150, 50, 100));
         header.add(targetCharLabel);
 
@@ -293,7 +293,7 @@ public class LobbyScreen extends JFrame {
                 panel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
                 JLabel nameLabel = new JLabel(p.name + (p.id == client.getMyId() ? " (คุณ)" : ""));
-                nameLabel.setFont(new Font("Tahoma", Font.BOLD, 18));
+                nameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
                 panel.add(nameLabel, BorderLayout.WEST);
 
                 JLabel statusLabel = new JLabel(p.character.equals("None") ? "⏳ กำลังเลือก..." : "✅ พร้อมแล้ว");

@@ -2,6 +2,7 @@ package com.jibgirl.network;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -22,7 +23,8 @@ public class GameServer {
                 Socket socket = serverSocket.accept();
                 if (clients.size() >= MAX_PLAYERS) {
                     System.out.println("❌ Server full. Rejecting connection.");
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                    PrintWriter out = new PrintWriter(
+                            new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                     out.println("ERROR:Server is full (Max 3 players)");
                     socket.close();
                     continue;
@@ -80,8 +82,8 @@ public class GameServer {
         @Override
         public void run() {
             try {
-                out = new PrintWriter(socket.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
                 out.println("WELCOME:" + playerId);
 

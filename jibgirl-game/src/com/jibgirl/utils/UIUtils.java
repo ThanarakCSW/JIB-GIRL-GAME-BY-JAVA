@@ -117,7 +117,7 @@ public class UIUtils {
             setBorderPainted(false);
             setFocusPainted(false);
             setForeground(Color.WHITE);
-            setFont(new Font("Tahoma", Font.BOLD, 16));
+            setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             addMouseListener(new MouseAdapter() {
@@ -246,7 +246,7 @@ public class UIUtils {
 
             // Percentage Text
             String text = getValue() + "%";
-            g2.setFont(new Font("Inter", Font.BOLD, 12));
+            g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
             FontMetrics metrics = g2.getFontMetrics();
             int tx = (width - metrics.stringWidth(text)) / 2;
             int ty = ((height - metrics.getHeight()) / 2) + metrics.getAscent();
