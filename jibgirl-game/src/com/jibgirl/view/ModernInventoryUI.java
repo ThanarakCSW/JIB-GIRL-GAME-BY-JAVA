@@ -92,7 +92,7 @@ public class ModernInventoryUI extends JFrame {
         java.util.List<String> items = inventory.getItems();
 
         if (items.isEmpty()) {
-            JLabel emptyLabel = new JLabel("Inventory is empty... 📦", SwingConstants.CENTER);
+            JLabel emptyLabel = new JLabel("Inventory is empty...", SwingConstants.CENTER);
             emptyLabel.setFont(new Font("Tahoma", Font.ITALIC, 20));
             emptyLabel.setForeground(new Color(150, 150, 200));
             mainPanel.setLayout(new BorderLayout());
@@ -122,7 +122,7 @@ public class ModernInventoryUI extends JFrame {
         nameLabel.setForeground(new Color(100, 50, 100));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        PremiumButton useBtn = new PremiumButton("GIVE 💝");
+        PremiumButton useBtn = new PremiumButton("GIVE");
         useBtn.setCute(true);
         useBtn.setPreferredSize(new Dimension(100, 35));
         useBtn.setMaximumSize(new Dimension(100, 35));
@@ -144,7 +144,7 @@ public class ModernInventoryUI extends JFrame {
             player.addAffection(bonus);
             if (parentGui != null)
                 parentGui.refreshStatus();
-            JOptionPane.showMessageDialog(this, "คุณมอบ " + name + " ให้เธอ! ❤️\nความรักเพิ่มขึ้น +" + bonus, "Kawaii!",
+            JOptionPane.showMessageDialog(this, "คุณมอบ " + name + " ให้เธอ!\nความรักเพิ่มขึ้น +" + bonus, "Kawaii!",
                     JOptionPane.INFORMATION_MESSAGE);
             refreshInventory();
         });

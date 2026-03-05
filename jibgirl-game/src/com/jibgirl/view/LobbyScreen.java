@@ -111,10 +111,14 @@ public class LobbyScreen extends JFrame {
 
         container.add(title);
         container.add(Box.createVerticalStrut(30));
-        container.add(new JLabel("ชื่อผู้เล่น:"));
+        JLabel nameLbl = new JLabel("ชื่อผู้เล่น:");
+        nameLbl.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
+        container.add(nameLbl);
         container.add(nameField);
         container.add(Box.createVerticalStrut(10));
-        container.add(new JLabel("Server IP: (สำหรับคนจอย)"));
+        JLabel ipLbl = new JLabel("Server IP: (สำหรับคนจอย)");
+        ipLbl.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
+        container.add(ipLbl);
         container.add(ipField);
         container.add(Box.createVerticalStrut(30));
         container.add(hostBtn);
@@ -209,7 +213,7 @@ public class LobbyScreen extends JFrame {
         header.setPreferredSize(new Dimension(800, 80));
         header.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 20));
 
-        targetCharLabel = new JLabel("Target: None");
+        targetCharLabel = new JLabel("เป้าหมายการจีบ: None");
         targetCharLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 24));
         targetCharLabel.setForeground(new Color(150, 50, 100));
         header.add(targetCharLabel);
@@ -297,7 +301,8 @@ public class LobbyScreen extends JFrame {
                 nameLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 18));
                 panel.add(nameLabel, BorderLayout.WEST);
 
-                JLabel statusLabel = new JLabel(p.character.equals("None") ? "⏳ กำลังเลือก..." : "✅ พร้อมแล้ว");
+                JLabel statusLabel = new JLabel(p.character.equals("None") ? "กำลังเลือก..." : "พร้อมแล้ว");
+                statusLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
                 statusLabel.setForeground(p.character.equals("None") ? Color.GRAY : new Color(0, 150, 0));
                 panel.add(statusLabel, BorderLayout.EAST);
 
