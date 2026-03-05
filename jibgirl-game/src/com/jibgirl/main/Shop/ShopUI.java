@@ -109,7 +109,7 @@ public class ShopUI extends JFrame {
         priceLabel.setForeground(new Color(255, 100, 150));
         priceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        PremiumButton buyBtn = new PremiumButton("BUY 🛒");
+        PremiumButton buyBtn = new PremiumButton("BUY ");
         buyBtn.setCute(true);
         buyBtn.setPreferredSize(new Dimension(100, 40));
         buyBtn.setMaximumSize(new Dimension(100, 40));
@@ -124,7 +124,7 @@ public class ShopUI extends JFrame {
                 JOptionPane.showMessageDialog(this, "ซื่อ " + name + " สำเร็จแล้วนะ! 🛍️✨", "Success",
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "เงินไม่พอจ้า! ขาดอีก " + (price - player.getMoney()) + " บาท 🥺",
+                JOptionPane.showMessageDialog(this, "เงินไม่พอจ้า! ขาดอีก " + (price - player.getMoney()) + " บาท",
                         "Oops!", JOptionPane.WARNING_MESSAGE);
             }
         });
