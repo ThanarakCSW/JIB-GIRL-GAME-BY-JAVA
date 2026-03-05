@@ -9,7 +9,7 @@ import static com.jibgirl.utils.UIUtils.*;
 public class CharacterSelectionScreen extends JFrame {
 
     public CharacterSelectionScreen() {
-        setTitle("💖 เลือกตัวละคร - Jib Girl Game Cute Edition 💖");
+        setTitle("เลือกตัวละคร - Jib Girl Game Cute Edition");
         setSize(1000, 700);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -18,7 +18,7 @@ public class CharacterSelectionScreen extends JFrame {
         setContentPane(new BackgroundPanel("/com/jibgirl/asset/start.jpg"));
         getContentPane().setLayout(new BorderLayout());
 
-        JLabel titleLabel = new JLabel("✨ เลือกตัวละครที่คุณต้องการจีบ ✨", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("เลือกตัวละครที่คุณต้องการจีบ", SwingConstants.CENTER);
         titleLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setBorder(new EmptyBorder(20, 0, 20, 0));
@@ -28,9 +28,9 @@ public class CharacterSelectionScreen extends JFrame {
         selectionPanel.setOpaque(false);
         selectionPanel.setBorder(new EmptyBorder(0, 50, 20, 50));
 
-        selectionPanel.add(createCharacterCard("มะปราง (Maprang) 🖌️", "Maprang"));
-        selectionPanel.add(createCharacterCard("ขนม (Kanom) 📸", "Kanom"));
-        selectionPanel.add(createCharacterCard("ไอซ์ (Ice) 🏀", "Ice"));
+        selectionPanel.add(createCharacterCard("มะปราง (Maprang)", "Maprang"));
+        selectionPanel.add(createCharacterCard("ขนม (Kanom)", "Kanom"));
+        selectionPanel.add(createCharacterCard("ไอซ์ (Ice)", "Ice"));
 
         add(selectionPanel, BorderLayout.CENTER);
 
@@ -39,7 +39,7 @@ public class CharacterSelectionScreen extends JFrame {
         southPanel.setOpaque(false);
         southPanel.setBorder(new EmptyBorder(0, 0, 20, 0));
 
-        PremiumButton backBtn = new PremiumButton("กลับหน้าหลัก ⬅️");
+        PremiumButton backBtn = new PremiumButton("กลับหน้าหลัก");
         backBtn.setCute(true);
         backBtn.setPreferredSize(new Dimension(200, 60));
         backBtn.addActionListener(e -> {
@@ -78,7 +78,7 @@ public class CharacterSelectionScreen extends JFrame {
         }
         characterSprite.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        PremiumButton selectButton = new PremiumButton("เลือกคนนี้แหละ! 💞");
+        PremiumButton selectButton = new PremiumButton("เลือกคนนี้แหละ!");
         selectButton.setCute(true);
         selectButton.setPreferredSize(new Dimension(220, 50));
         selectButton.setMaximumSize(new Dimension(220, 50));
