@@ -21,7 +21,7 @@ public class ShopUI extends JFrame {
         this.inventory = inventory;
         this.parentGui = parentGui;
 
-        setTitle("🎀 Kawaii Shop - ร้านค้าน่ารัก 🎀");
+        setTitle("Kawaii Shop - ร้านค้าน่ารัก");
         setSize(750, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -30,7 +30,7 @@ public class ShopUI extends JFrame {
         // Pastel Background
         getContentPane().setBackground(UIUtils.PASTEL_PINK);
 
-        JLabel titleLabel = new JLabel("Welcome to My Cute Shop ✨", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Welcome to My Cute Shop", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Tahoma", Font.BOLD, 28));
         titleLabel.setForeground(new Color(150, 50, 100));
         titleLabel.setBorder(new EmptyBorder(30, 0, 10, 0));
@@ -79,7 +79,7 @@ public class ShopUI extends JFrame {
         footer.setOpaque(false);
         footer.setBorder(new EmptyBorder(20, 0, 30, 0));
 
-        PremiumButton closeBtn = new PremiumButton("ปิดร้านค้า ❌");
+        PremiumButton closeBtn = new PremiumButton("ปิดร้านค้า");
         closeBtn.setCute(true);
         closeBtn.setPreferredSize(new Dimension(150, 50));
         closeBtn.addActionListener(e -> dispose());
@@ -109,7 +109,7 @@ public class ShopUI extends JFrame {
         priceLabel.setForeground(new Color(255, 100, 150));
         priceLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        PremiumButton buyBtn = new PremiumButton("BUY 🛒");
+        PremiumButton buyBtn = new PremiumButton("BUY ");
         buyBtn.setCute(true);
         buyBtn.setPreferredSize(new Dimension(100, 40));
         buyBtn.setMaximumSize(new Dimension(100, 40));
@@ -121,10 +121,10 @@ public class ShopUI extends JFrame {
                 balanceLabel.setText("Your Balance: " + player.getMoney() + "฿");
                 if (parentGui != null)
                     parentGui.refreshStatus();
-                JOptionPane.showMessageDialog(this, "ซื่อ " + name + " สำเร็จแล้วนะ! 🛍️✨", "Success",
+                JOptionPane.showMessageDialog(this, "ซื่อ " + name + " สำเร็จแล้วนะ!", "Success",
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "เงินไม่พอจ้า! ขาดอีก " + (price - player.getMoney()) + " บาท 🥺",
+                JOptionPane.showMessageDialog(this, "เงินไม่พอจ้า! ขาดอีก " + (price - player.getMoney()) + " บาท",
                         "Oops!", JOptionPane.WARNING_MESSAGE);
             }
         });

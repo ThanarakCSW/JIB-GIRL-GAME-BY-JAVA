@@ -2,6 +2,7 @@ package com.jibgirl.view;
 
 import javax.swing.*;
 import java.awt.*;
+import com.jibgirl.utils.UIUtils;
 import com.jibgirl.utils.UIUtils.*;
 
 public class StartScreen extends JFrame {
@@ -21,9 +22,9 @@ public class StartScreen extends JFrame {
         bottomPanel.setOpaque(false);
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 100, 0));
 
-        PremiumButton startButton = new PremiumButton("เริ่มเกม! 💞✨");
+        PremiumButton startButton = new PremiumButton("เริ่มเกม!");
         startButton.setCute(true);
-        startButton.setFont(new Font("Tahoma", Font.BOLD, 28));
+        startButton.setFont(UIUtils.getBalancedFont(Font.BOLD, 28));
         startButton.setPreferredSize(new Dimension(400, 80));
 
         startButton.addActionListener(e -> {
@@ -31,9 +32,9 @@ public class StartScreen extends JFrame {
             dispose();
         });
 
-        PremiumButton onlineButton = new PremiumButton("โหมดออนไลน์ 💞");
+        PremiumButton onlineButton = new PremiumButton("โหมดออนไลน์");
         onlineButton.setCute(true);
-        onlineButton.setFont(new Font("Tahoma", Font.BOLD, 28));
+        onlineButton.setFont(UIUtils.getBalancedFont(Font.BOLD, 28));
         onlineButton.setPreferredSize(new Dimension(400, 80));
         onlineButton.addActionListener(e -> {
             new LobbyScreen();

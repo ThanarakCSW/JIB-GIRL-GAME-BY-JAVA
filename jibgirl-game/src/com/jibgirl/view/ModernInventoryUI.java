@@ -47,7 +47,7 @@ public class ModernInventoryUI extends JFrame {
         this.player = player;
         this.parentGui = parentGui;
 
-        setTitle("🎒 My Cute Inventory - กระเป๋าของฉัน");
+        setTitle("My Cute Inventory - กระเป๋าของฉัน");
         setSize(700, 550);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -55,7 +55,7 @@ public class ModernInventoryUI extends JFrame {
 
         getContentPane().setBackground(UIUtils.PASTEL_PURPLE);
 
-        JLabel titleLabel = new JLabel("My Items ✨", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("My Items", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Tahoma", Font.BOLD, 28));
         titleLabel.setForeground(new Color(100, 50, 150));
         titleLabel.setBorder(new EmptyBorder(30, 0, 20, 0));
@@ -73,7 +73,7 @@ public class ModernInventoryUI extends JFrame {
         scrollPane.setBorder(null);
         add(scrollPane, BorderLayout.CENTER);
 
-        PremiumButton closeBtn = new PremiumButton("BACK 🏠");
+        PremiumButton closeBtn = new PremiumButton("BACK");
         closeBtn.setCute(true);
         closeBtn.setPreferredSize(new Dimension(150, 50));
         closeBtn.addActionListener(e -> dispose());
@@ -92,7 +92,7 @@ public class ModernInventoryUI extends JFrame {
         java.util.List<String> items = inventory.getItems();
 
         if (items.isEmpty()) {
-            JLabel emptyLabel = new JLabel("Inventory is empty... 📦", SwingConstants.CENTER);
+            JLabel emptyLabel = new JLabel("Inventory is empty...", SwingConstants.CENTER);
             emptyLabel.setFont(new Font("Tahoma", Font.ITALIC, 20));
             emptyLabel.setForeground(new Color(150, 150, 200));
             mainPanel.setLayout(new BorderLayout());
@@ -122,7 +122,7 @@ public class ModernInventoryUI extends JFrame {
         nameLabel.setForeground(new Color(100, 50, 100));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        PremiumButton useBtn = new PremiumButton("GIVE 💝");
+        PremiumButton useBtn = new PremiumButton("GIVE");
         useBtn.setCute(true);
         useBtn.setPreferredSize(new Dimension(100, 35));
         useBtn.setMaximumSize(new Dimension(100, 35));
@@ -144,7 +144,7 @@ public class ModernInventoryUI extends JFrame {
             player.addAffection(bonus);
             if (parentGui != null)
                 parentGui.refreshStatus();
-            JOptionPane.showMessageDialog(this, "คุณมอบ " + name + " ให้เธอ! ❤️\nความรักเพิ่มขึ้น +" + bonus, "Kawaii!",
+            JOptionPane.showMessageDialog(this, "คุณมอบ " + name + " ให้เธอ!\nความรักเพิ่มขึ้น +" + bonus, "Kawaii!",
                     JOptionPane.INFORMATION_MESSAGE);
             refreshInventory();
         });

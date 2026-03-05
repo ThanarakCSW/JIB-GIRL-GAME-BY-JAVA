@@ -26,7 +26,7 @@ public class LobbyScreen extends JFrame {
 
     public LobbyScreen() {
         client = new GameClient();
-        setTitle("💖 Multiplayer Lobby - Jib Girl Game 💖");
+        setTitle("Multiplayer Lobby - Jib Girl Game");
         setSize(900, 700);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -78,7 +78,7 @@ public class LobbyScreen extends JFrame {
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
         container.setBorder(new EmptyBorder(40, 40, 40, 40));
 
-        JLabel title = new JLabel("✨ โหมดออนไลน์ ✨", SwingConstants.CENTER);
+        JLabel title = new JLabel("โหมดออนไลน์", SwingConstants.CENTER);
         title.setFont(UIUtils.getBalancedFont(Font.BOLD, 32));
         title.setForeground(new Color(100, 50, 50));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -86,12 +86,14 @@ public class LobbyScreen extends JFrame {
         nameField = new JTextField("Player");
         nameField.setFont(UIUtils.getBalancedFont(Font.PLAIN, 20));
         nameField.setMaximumSize(new Dimension(300, 50));
+        nameField.setHorizontalAlignment(JTextField.CENTER);
 
         ipField = new JTextField("localhost");
         ipField.setFont(UIUtils.getBalancedFont(Font.PLAIN, 20));
         ipField.setMaximumSize(new Dimension(300, 50));
+        ipField.setHorizontalAlignment(JTextField.CENTER);
 
-        PremiumButton hostBtn = new PremiumButton("สร้างห้องใหม่ (Host) 🏠");
+        PremiumButton hostBtn = new PremiumButton("สร้างห้องใหม่ (Host)");
         hostBtn.setCute(true);
         hostBtn.setMaximumSize(new Dimension(300, 60));
         hostBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -100,7 +102,7 @@ public class LobbyScreen extends JFrame {
             startHost();
         });
 
-        PremiumButton joinBtn = new PremiumButton("เข้าร่วมห้อง (Join) 🚀");
+        PremiumButton joinBtn = new PremiumButton("เข้าร่วมห้อง (Join)");
         joinBtn.setCute(true); // [FIX] Align with theme
         joinBtn.setMaximumSize(new Dimension(300, 60));
         joinBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -111,10 +113,16 @@ public class LobbyScreen extends JFrame {
 
         container.add(title);
         container.add(Box.createVerticalStrut(30));
-        container.add(new JLabel("ชื่อผู้เล่น:"));
+        JLabel nameLbl = new JLabel("ชื่อผู้เล่น:");
+        nameLbl.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
+        nameLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        container.add(nameLbl);
         container.add(nameField);
         container.add(Box.createVerticalStrut(10));
-        container.add(new JLabel("Server IP: (สำหรับคนจอย)"));
+        JLabel ipLbl = new JLabel("Server IP: (สำหรับคนจอย)");
+        ipLbl.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
+        ipLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        container.add(ipLbl);
         container.add(ipField);
         container.add(Box.createVerticalStrut(30));
         container.add(hostBtn);
@@ -122,7 +130,7 @@ public class LobbyScreen extends JFrame {
         container.add(joinBtn);
         container.add(Box.createVerticalStrut(10));
 
-        PremiumButton backBtn = new PremiumButton("กลับไปหน้าหลัก ⬅️");
+        PremiumButton backBtn = new PremiumButton("กลับไปหน้าหลัก");
         backBtn.setCute(true); // [FIX] Align with theme
         backBtn.setMaximumSize(new Dimension(300, 60));
         backBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -141,7 +149,7 @@ public class LobbyScreen extends JFrame {
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(50, 50, 50, 50));
 
-        JLabel title = new JLabel("✨ เลือกตัวละครที่จะจีบ (Host Only) ✨", SwingConstants.CENTER);
+        JLabel title = new JLabel("เลือกตัวละครที่จะจีบ (Host Only)", SwingConstants.CENTER);
         title.setFont(UIUtils.getBalancedFont(Font.BOLD, 32));
         title.setForeground(Color.WHITE);
         panel.add(title, BorderLayout.NORTH);
@@ -149,9 +157,9 @@ public class LobbyScreen extends JFrame {
         JPanel grid = new JPanel(new GridLayout(1, 3, 20, 0));
         grid.setOpaque(false);
 
-        grid.add(createCharCard("Maprang", "มะปราง 🎨"));
-        grid.add(createCharCard("Kanom", "ขนม 📸"));
-        grid.add(createCharCard("Ice", "ไอซ์ 🏀"));
+        grid.add(createCharCard("Maprang", "มะปราง"));
+        grid.add(createCharCard("Kanom", "ขนม"));
+        grid.add(createCharCard("Ice", "ไอซ์"));
 
         panel.add(grid, BorderLayout.CENTER);
 
@@ -159,7 +167,7 @@ public class LobbyScreen extends JFrame {
         southPanel.setOpaque(false);
         southPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
 
-        PremiumButton backBtn = new PremiumButton("⬅️ กลับ");
+        PremiumButton backBtn = new PremiumButton("กลับ");
         backBtn.setCute(true); // [FIX] Align with theme
         backBtn.setPreferredSize(new Dimension(150, 50));
         backBtn.addActionListener(e -> {
@@ -209,12 +217,15 @@ public class LobbyScreen extends JFrame {
         header.setPreferredSize(new Dimension(800, 80));
         header.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 20));
 
-        targetCharLabel = new JLabel("Target: None");
+        targetCharLabel = new JLabel("เป้าหมายการจีบ: None");
         targetCharLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 24));
         targetCharLabel.setForeground(new Color(150, 50, 100));
         header.add(targetCharLabel);
 
-        panel.add(header, BorderLayout.NORTH);
+        JPanel headerWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        headerWrapper.setOpaque(false);
+        headerWrapper.add(header);
+        panel.add(headerWrapper, BorderLayout.NORTH);
 
         playerListPanel = new JPanel();
         playerListPanel.setLayout(new BoxLayout(playerListPanel, BoxLayout.Y_AXIS));
@@ -225,7 +236,7 @@ public class LobbyScreen extends JFrame {
         scroll.setBorder(new EmptyBorder(20, 0, 20, 0));
         panel.add(scroll, BorderLayout.CENTER);
 
-        startButton = new PremiumButton("เริ่มเกม! 💖✨");
+        startButton = new PremiumButton("เริ่มเกม!");
         startButton.setCute(true);
         startButton.setPreferredSize(new Dimension(300, 70));
         startButton.setEnabled(false);
@@ -234,7 +245,7 @@ public class LobbyScreen extends JFrame {
         JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         south.setOpaque(false);
 
-        PremiumButton exitBtn = new PremiumButton("ออกจากห้อง 🚪");
+        PremiumButton exitBtn = new PremiumButton("ออกจากห้อง");
         exitBtn.setCute(true); // [FIX] Align with theme
         exitBtn.setPreferredSize(new Dimension(200, 70));
         exitBtn.addActionListener(e -> {
@@ -291,13 +302,15 @@ public class LobbyScreen extends JFrame {
                 panel.setBackground(new Color(255, 255, 255, 180));
                 panel.setLayout(new BorderLayout());
                 panel.setMaximumSize(new Dimension(700, 60));
+                panel.setAlignmentX(Component.CENTER_ALIGNMENT);
                 panel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
                 JLabel nameLabel = new JLabel(p.name + (p.id == client.getMyId() ? " (คุณ)" : ""));
                 nameLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 18));
                 panel.add(nameLabel, BorderLayout.WEST);
 
-                JLabel statusLabel = new JLabel(p.character.equals("None") ? "⏳ กำลังเลือก..." : "✅ พร้อมแล้ว");
+                JLabel statusLabel = new JLabel(p.character.equals("None") ? "กำลังเลือก..." : "พร้อมแล้ว");
+                statusLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
                 statusLabel.setForeground(p.character.equals("None") ? Color.GRAY : new Color(0, 150, 0));
                 panel.add(statusLabel, BorderLayout.EAST);
 
