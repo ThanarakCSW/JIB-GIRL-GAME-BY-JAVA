@@ -51,8 +51,8 @@ public class GameGui extends JFrame {
     private PremiumButton endingButton;
     private boolean isGameComplete = false;
 
-    private static final Font MAIN_FONT = new Font("Tahoma", Font.BOLD, 18);
-    private static final Font DIALOG_FONT = new Font("Tahoma", Font.BOLD, 22);
+    private static final Font MAIN_FONT = UIUtils.getBalancedFont(Font.BOLD, 18);
+    private static final Font DIALOG_FONT = UIUtils.getBalancedFont(Font.BOLD, 22);
 
     public GameGui(String characterKey) {
         this.client = null;

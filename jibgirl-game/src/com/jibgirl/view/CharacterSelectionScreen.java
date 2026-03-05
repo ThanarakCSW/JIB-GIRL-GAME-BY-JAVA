@@ -3,6 +3,7 @@ package com.jibgirl.view;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import com.jibgirl.utils.UIUtils;
 import static com.jibgirl.utils.UIUtils.*;
 
 public class CharacterSelectionScreen extends JFrame {
@@ -18,7 +19,7 @@ public class CharacterSelectionScreen extends JFrame {
         getContentPane().setLayout(new BorderLayout());
 
         JLabel titleLabel = new JLabel("✨ เลือกตัวละครที่คุณต้องการจีบ ✨", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Tahoma", Font.BOLD, 36));
+        titleLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setBorder(new EmptyBorder(20, 0, 20, 0));
         add(titleLabel, BorderLayout.NORTH);
@@ -57,7 +58,7 @@ public class CharacterSelectionScreen extends JFrame {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
         JLabel nameLabel = new JLabel(name);
-        nameLabel.setFont(new Font("Tahoma", Font.BOLD, 22));
+        nameLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 22));
         nameLabel.setForeground(new Color(100, 50, 50));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         nameLabel.setBorder(new EmptyBorder(30, 0, 20, 0));
