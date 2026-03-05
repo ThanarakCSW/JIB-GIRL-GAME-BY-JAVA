@@ -33,9 +33,15 @@ public class UIUtils {
     public static Font getBalancedFont(int style, int size) {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
-            // "Dialog" is a composite font on Windows that handles Thai well.
-            // Alternatively, "Segoe UI" is the modern Windows system font with emoji
-            // support.
+            // Try explicit Thai fonts on Windows for better reliability
+            Font f = new Font("Leelawadee UI", style, size);
+            if (f.getFamily().equalsIgnoreCase("Leelawadee UI")) {
+                return f;
+            }
+            f = new Font("Tahoma", style, size);
+            if (f.getFamily().equalsIgnoreCase("Tahoma")) {
+                return f;
+            }
             return new Font("Dialog", style, size);
         } else if (os.contains("mac")) {
             return new Font(Font.SANS_SERIF, style, size);

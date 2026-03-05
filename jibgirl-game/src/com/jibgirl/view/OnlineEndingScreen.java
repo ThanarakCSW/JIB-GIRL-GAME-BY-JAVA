@@ -2,6 +2,7 @@ package com.jibgirl.view;
 
 import com.jibgirl.network.GameResult;
 import com.jibgirl.network.GameClient;
+import com.jibgirl.utils.UIUtils;
 import com.jibgirl.utils.UIUtils.ModernPanel;
 import com.jibgirl.utils.UIUtils.PremiumButton;
 
@@ -52,7 +53,7 @@ public class OnlineEndingScreen extends JFrame {
         PremiumButton backBtn = new PremiumButton("กลับหน้าหลัก");
         backBtn.setCute(true); // [FIX] Align with theme
         backBtn.setPreferredSize(new Dimension(200, 60));
-        backBtn.setFont(new Font("Tahoma", Font.BOLD, 20));
+        backBtn.setFont(UIUtils.getBalancedFont(Font.BOLD, 20));
         backBtn.addActionListener(e -> {
             if (client != null) {
                 client.disconnect();
@@ -72,7 +73,7 @@ public class OnlineEndingScreen extends JFrame {
         panel.setBorder(new EmptyBorder(60, 20, 20, 20));
 
         JLabel titleLabel = new JLabel();
-        titleLabel.setFont(new Font("Tahoma", Font.BOLD, 72));
+        titleLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 72));
 
         if (isWinner) {
             titleLabel.setText("คุณมัดใจสาวคนนี้ได้แล้ว");
@@ -159,7 +160,7 @@ public class OnlineEndingScreen extends JFrame {
         card.setBorder(new EmptyBorder(25, 20, 25, 20));
 
         JLabel titleLabel = new JLabel(title, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Tahoma", Font.BOLD, 22));
+        titleLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 22));
         titleLabel.setForeground(isWinnerCard ? new Color(100, 70, 0) : Color.WHITE);
         card.add(titleLabel, BorderLayout.NORTH);
 
@@ -170,7 +171,7 @@ public class OnlineEndingScreen extends JFrame {
         stats.add(Box.createVerticalGlue());
 
         JLabel nameLabel = new JLabel(result.getPlayerName(), SwingConstants.CENTER);
-        nameLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
+        nameLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 24));
         // Use darker contrast for golden background
         nameLabel.setForeground(isWinnerCard ? new Color(80, 50, 0) : new Color(100, 50, 100));
         nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -179,7 +180,7 @@ public class OnlineEndingScreen extends JFrame {
         stats.add(Box.createVerticalStrut(10));
 
         JLabel charLabel = new JLabel("(" + result.getCharacterName() + ")", SwingConstants.CENTER);
-        charLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
+        charLabel.setFont(UIUtils.getBalancedFont(Font.PLAIN, 18));
         charLabel.setForeground(new Color(150, 100, 180));
         charLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         stats.add(charLabel);
@@ -187,7 +188,7 @@ public class OnlineEndingScreen extends JFrame {
         stats.add(Box.createVerticalStrut(30));
 
         JLabel scoreLabel = new JLabel("SCORE: " + result.getFinalScore(), SwingConstants.CENTER);
-        scoreLabel.setFont(new Font("Tahoma", Font.BOLD, 26));
+        scoreLabel.setFont(UIUtils.getBalancedFont(Font.BOLD, 26));
         scoreLabel.setForeground(new Color(100, 50, 100));
         scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         stats.add(scoreLabel);
