@@ -86,10 +86,12 @@ public class LobbyScreen extends JFrame {
         nameField = new JTextField("Player");
         nameField.setFont(UIUtils.getBalancedFont(Font.PLAIN, 20));
         nameField.setMaximumSize(new Dimension(300, 50));
+        nameField.setHorizontalAlignment(JTextField.CENTER);
 
         ipField = new JTextField("localhost");
         ipField.setFont(UIUtils.getBalancedFont(Font.PLAIN, 20));
         ipField.setMaximumSize(new Dimension(300, 50));
+        ipField.setHorizontalAlignment(JTextField.CENTER);
 
         PremiumButton hostBtn = new PremiumButton("สร้างห้องใหม่ (Host)");
         hostBtn.setCute(true);
@@ -113,11 +115,13 @@ public class LobbyScreen extends JFrame {
         container.add(Box.createVerticalStrut(30));
         JLabel nameLbl = new JLabel("ชื่อผู้เล่น:");
         nameLbl.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
+        nameLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
         container.add(nameLbl);
         container.add(nameField);
         container.add(Box.createVerticalStrut(10));
         JLabel ipLbl = new JLabel("Server IP: (สำหรับคนจอย)");
         ipLbl.setFont(UIUtils.getBalancedFont(Font.BOLD, 16));
+        ipLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
         container.add(ipLbl);
         container.add(ipField);
         container.add(Box.createVerticalStrut(30));
@@ -218,7 +222,10 @@ public class LobbyScreen extends JFrame {
         targetCharLabel.setForeground(new Color(150, 50, 100));
         header.add(targetCharLabel);
 
-        panel.add(header, BorderLayout.NORTH);
+        JPanel headerWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        headerWrapper.setOpaque(false);
+        headerWrapper.add(header);
+        panel.add(headerWrapper, BorderLayout.NORTH);
 
         playerListPanel = new JPanel();
         playerListPanel.setLayout(new BoxLayout(playerListPanel, BoxLayout.Y_AXIS));
@@ -295,6 +302,7 @@ public class LobbyScreen extends JFrame {
                 panel.setBackground(new Color(255, 255, 255, 180));
                 panel.setLayout(new BorderLayout());
                 panel.setMaximumSize(new Dimension(700, 60));
+                panel.setAlignmentX(Component.CENTER_ALIGNMENT);
                 panel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
                 JLabel nameLabel = new JLabel(p.name + (p.id == client.getMyId() ? " (คุณ)" : ""));

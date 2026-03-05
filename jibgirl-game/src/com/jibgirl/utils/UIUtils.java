@@ -49,6 +49,20 @@ public class UIUtils {
         return new Font(Font.DIALOG, style, size);
     }
 
+    /**
+     * Applies the balanced font globally to UIManager so that default components
+     * like JOptionPane use the correct Thai-friendly font.
+     */
+    public static void applyGlobalFont() {
+        Font defaultFont = getBalancedFont(Font.PLAIN, 14);
+        Font boldFont = getBalancedFont(Font.BOLD, 14);
+
+        UIManager.put("OptionPane.messageFont", defaultFont);
+        UIManager.put("OptionPane.buttonFont", boldFont);
+        UIManager.put("Label.font", defaultFont);
+        UIManager.put("Button.font", boldFont);
+    }
+
     public static class ModernPanel extends JPanel {
         private int round = 40;
         private Color bgColor = GLASS_WHITE;
