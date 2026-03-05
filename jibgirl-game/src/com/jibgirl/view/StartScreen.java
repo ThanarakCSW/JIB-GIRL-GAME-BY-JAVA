@@ -2,12 +2,13 @@ package com.jibgirl.view;
 
 import javax.swing.*;
 import java.awt.*;
+import com.jibgirl.utils.UIUtils;
 import com.jibgirl.utils.UIUtils.*;
 
 public class StartScreen extends JFrame {
 
     public StartScreen() {
-        setTitle("💖 Jib Girl Game 💖");
+        setTitle("ผลลัพธ์การจีบสาว");
         setSize(900, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -21,7 +22,8 @@ public class StartScreen extends JFrame {
         bottomPanel.setOpaque(false);
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 100, 0));
 
-        PremiumButton startButton = new PremiumButton("เริ่มเกม! 💞✨");
+        PremiumButton startButton = new PremiumButton(
+                "<html>เริ่มเกม! " + UIUtils.getEmoji("1F49E") + UIUtils.getEmoji("2728") + "</html>");
         startButton.setCute(true);
         startButton.setFont(new Font("Tahoma", Font.BOLD, 28));
         startButton.setPreferredSize(new Dimension(400, 80));
@@ -31,7 +33,7 @@ public class StartScreen extends JFrame {
             dispose();
         });
 
-        PremiumButton onlineButton = new PremiumButton("โหมดออนไลน์ 💞");
+        PremiumButton onlineButton = new PremiumButton("<html>โหมดออนไลน์ " + UIUtils.getEmoji("1F49E") + "</html>");
         onlineButton.setCute(true);
         onlineButton.setFont(new Font("Tahoma", Font.BOLD, 28));
         onlineButton.setPreferredSize(new Dimension(400, 80));

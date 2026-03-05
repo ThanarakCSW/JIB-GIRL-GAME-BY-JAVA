@@ -26,7 +26,7 @@ public class OnlineEndingScreen extends JFrame {
         // [FIX] Winner is anyone who has the same top score as the absolute winner
         this.isWinner = (myResult.getFinalScore() == winnerResult.getFinalScore());
 
-        setTitle("🎮 ผลลัพธ์การจีบสาว 🎮");
+        setTitle("ผลลัพธ์การจีบออนไลน์");
         setSize(1000, 700);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);

@@ -31,16 +31,18 @@ public class UIUtils {
      * Thai and common symbols/emojis more reliably across different JVMs.
      */
     public static Font getBalancedFont(int style, int size) {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            // "Dialog" is a composite font on Windows that handles Thai well.
-            // Alternatively, "Segoe UI" is the modern Windows system font with emoji
-            // support.
-            return new Font("Dialog", style, size);
-        } else if (os.contains("mac")) {
-            return new Font(Font.SANS_SERIF, style, size);
-        }
+        // "Dialog" is a composite font in Java that handles multiple scripts
+        // and provides the best consistent fallback for emojis and Thai.
         return new Font(Font.DIALOG, style, size);
+    }
+
+    /**
+     * Helper to get common emoji strings if code doesn't support direct UTF-8
+     * literals well
+     */
+    public static String getEmoji(String hex) {
+        int codePoint = Integer.parseInt(hex, 16);
+        return new String(Character.toChars(codePoint));
     }
 
     public static class ModernPanel extends JPanel {

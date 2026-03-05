@@ -70,7 +70,7 @@ public class GameGui extends JFrame {
         this.staminaManager = new StaminaManager();
         this.inventory = new Inventory();
 
-        setTitle("💖 Jib Girl Game - Cute Edition 💖");
+        setTitle("Jib Girl Game - Cute Edition");
         setSize(1200, 900);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -129,7 +129,7 @@ public class GameGui extends JFrame {
         ModernPanel moneyContainer = new ModernPanel(20);
         moneyContainer.setBackground(UIUtils.PASTEL_PINK);
         moneyContainer.setPreferredSize(new Dimension(180, 70));
-        moneyLabel = new JLabel("💰 1,000", SwingConstants.CENTER);
+        moneyLabel = new JLabel("<html>" + UIUtils.getEmoji("1F4B0") + " 1,000</html>", SwingConstants.CENTER);
         moneyLabel.setForeground(new Color(100, 50, 50));
         moneyLabel.setFont(MAIN_FONT);
         moneyContainer.add(moneyLabel);
@@ -165,7 +165,7 @@ public class GameGui extends JFrame {
         rightPanel.add(Box.createVerticalStrut(10));
         rightPanel.add(invBtn);
         rightPanel.add(Box.createVerticalStrut(10));
-        timerLabel = new JLabel("⏱️ 30", SwingConstants.CENTER);
+        timerLabel = new JLabel("<html>" + UIUtils.getEmoji("23F1") + " 30</html>", SwingConstants.CENTER);
         timerLabel.setForeground(new Color(80, 50, 100));
         timerLabel.setFont(MAIN_FONT);
         // only show timer in multiplayer mode
